@@ -17,7 +17,8 @@ import CheckDetails from './pages/CheckDetails';
 import InsertExtractedData from './pages/InsertExtractedData';
 
 // Set up axios defaults
-axios.defaults.baseURL = 'http://localhost:5000';
+// In production on Vercel, set REACT_APP_API_BASE_URL to your backend URL (or use Vercel rewrites)
+axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL || '';
 
 function App() {
   const [user, setUser] = useState(null);

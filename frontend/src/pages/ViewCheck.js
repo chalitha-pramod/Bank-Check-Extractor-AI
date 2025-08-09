@@ -157,7 +157,7 @@ const ViewCheck = () => {
             Original Image
           </h3>
           <img 
-            src={`http://localhost:5000/uploads/${check.image_filename}`}
+            src={`${(process.env.REACT_APP_API_BASE_URL || '')}/uploads/${check.image_filename}`}
             alt="Bank Check"
             style={{ 
               maxWidth: '100%', 
