@@ -51,9 +51,11 @@ This guide will help you deploy your Bank Check AI application separately on Ver
    cd ../frontend
    ```
 
-2. Update the API URL in `env.production`:
-   ```
-   REACT_APP_API_URL=https://your-backend-domain.vercel.app
+2. Update the API URL in `frontend/vercel.json`:
+   ```json
+   "env": {
+     "REACT_APP_API_URL": "https://your-backend-domain.vercel.app"
+   }
    ```
    Replace `your-backend-domain.vercel.app` with your actual backend URL.
 
@@ -70,6 +72,10 @@ This guide will help you deploy your Bank Check AI application separately on Ver
 
 ## Step 4: Configure Frontend Environment Variables
 
+**Option 1: Direct Configuration (Recommended)**
+Update the `frontend/vercel.json` file directly with your backend URL before deployment.
+
+**Option 2: Vercel Dashboard (Alternative)**
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Select your frontend project
 3. Go to Settings → Environment Variables
