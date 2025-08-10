@@ -11,7 +11,7 @@ const PostDetail = () => {
 
   useEffect(() => {
     fetchPost();
-  }, [id]);
+  }, [id, fetchPost]);
 
   const fetchPost = async () => {
     try {

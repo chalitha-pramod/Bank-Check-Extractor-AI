@@ -89,7 +89,7 @@ const Dashboard = ({ user }) => {
 
   const handleInsertSampleData = async () => {
     try {
-      const response = await axios.post('/api/checks/insert-sample');
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks/insert-sample`);
       toast.success('Sample data inserted successfully!');
       // Refresh the checks list
       fetchChecks();

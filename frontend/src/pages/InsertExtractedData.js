@@ -24,7 +24,7 @@ const InsertExtractedData = () => {
     } else {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchCheck]);
 
   const fetchCheck = async () => {
     try {
@@ -49,7 +49,7 @@ const InsertExtractedData = () => {
     setSubmitting(true);
 
     try {
-      const response = await axios.post(`/api/checks/${id}/insert-extracted-data`, {
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}/insert-extracted-data`, {
         extractedData: extractedData
       });
 
@@ -70,7 +70,7 @@ const InsertExtractedData = () => {
     setSubmitting(true);
 
     try {
-      const response = await axios.post(`/api/checks/${id}/insert-extracted-data`, {
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}/insert-extracted-data`, {
         extractedData: extractedData
       });
 

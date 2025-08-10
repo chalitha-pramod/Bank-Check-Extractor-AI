@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import Navbar from './components/Navbar';
@@ -17,7 +17,7 @@ import CheckDetails from './pages/CheckDetails';
 import InsertExtractedData from './pages/InsertExtractedData';
 
 // Set up axios defaults
-// In production on Vercel, set REACT_APP_API_BASE_URL to your backend URL (or use Vercel rewrites)
+// In production on Vercel, set REACT_APP_API_BASE_URL to your backend URL
 axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL || '';
 
 function App() {

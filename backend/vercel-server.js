@@ -7,7 +7,12 @@ const checksRouter = require('./routes/checks');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://bank-check-extractor-ai.vercel.app', 'https://bank-check-extractor-ai-frontend.vercel.app']
+    : 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

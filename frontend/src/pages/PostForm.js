@@ -17,11 +17,11 @@ const PostForm = () => {
     if (isEditing) {
       fetchPost();
     }
-  }, [id]);
+  }, [id, isEditing, fetchPost]);
 
   const fetchPost = async () => {
     try {
-      const response = await axios.get(`/users/posts/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}`);
       setFormData({
         title: response.data.post.title,
         content: response.data.post.content
@@ -45,9 +45,9 @@ const PostForm = () => {
 
     try {
       if (isEditing) {
-        await axios.put(`/users/posts/${id}`, formData);
+        await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}`, formData);
       } else {
-        await axios.post('/users/posts', formData);
+        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks`, formData);
       }
       navigate('/dashboard');
     } catch (error) {

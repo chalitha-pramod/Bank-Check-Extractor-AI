@@ -6,6 +6,7 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "build",
+        "buildCommand": "npm run vercel-build",
         "env": {
           "CI": "false"
         }
@@ -22,6 +23,6 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://bank-check-extractor-ai-backend.vercel.app"
+    "REACT_APP_API_BASE_URL": "https://bank-check-extractor-ai-backend.vercel.app"
   }
 }

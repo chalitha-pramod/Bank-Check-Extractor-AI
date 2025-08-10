@@ -14,11 +14,11 @@ const ViewCheck = () => {
 
   useEffect(() => {
     fetchCheck();
-  }, [id]);
+  }, [id, fetchCheck]);
 
   const fetchCheck = async () => {
     try {
-      const response = await axios.get(`/api/checks/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}`);
       const checkData = response.data.check;
       setCheck(checkData);
       

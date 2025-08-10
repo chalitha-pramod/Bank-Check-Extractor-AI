@@ -36,7 +36,7 @@ const ExtractCheck = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('/api/checks/extract', formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks/extract`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
