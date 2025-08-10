@@ -4,6 +4,8 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { extractCheckInformation } from '../utils/jsonDataHelper';
 
+const API_BASE = 'https://bank-check-extractor-ai-backend.vercel.app';
+
 const Dashboard = ({ user }) => {
   const [checks, setChecks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,18 +16,37 @@ const Dashboard = ({ user }) => {
 
   const fetchChecks = async () => {
     try {
-      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/checks');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        toast.error('Authentication required. Please login again.');
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE}/api/checks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setChecks(response.data.checks || []);
     } catch (error) {
       console.error('Failed to fetch checks:', error);
-      toast.error('Failed to fetch checks');
+      if (error.response?.status === 401) {
+        toast.error('Authentication failed. Please login again.');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      } else {
+        toast.error('Failed to fetch checks');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (checkId) => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`/api/checks/${checkId}`);
+        await axios.delete(`${API_BASE}/api/checks/${checkId}`);
         setChecks(checks.filter(check => check.id !== checkId));
         toast.success('Check deleted successfully');
       } catch (error) {
@@ -36,10 +57,9 @@ const Dashboard = ({ user }) => {
 
   const handleExportCSV = async (checkId) => {
     try {
-      const response = await axios.get(`/api/checks/${checkId}/export-csv`, {
+      const response = await axios.get(`${API_BASE}/api/checks/${checkId}/export-csv`, {
         responseType: 'blob'
       });
-      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -55,10 +75,9 @@ const Dashboard = ({ user }) => {
 
   const handleExportPDF = async (checkId) => {
     try {
-      const response = await axios.get(`/api/checks/${checkId}/export-pdf`, {
+      const response = await axios.get(`${API_BASE}/api/checks/${checkId}/export-pdf`, {
         responseType: 'blob'
       });
-      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -74,16 +93,14 @@ const Dashboard = ({ user }) => {
 
   const handleInsertSampleData = async () => {
     try {
-      await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/checks/insert-sample');
+      await axios.post(`${API_BASE}/api/checks/insert-sample`);
       toast.success('Sample data inserted successfully!');
-      // Refresh the checks list
       fetchChecks();
     } catch (error) {
       toast.error('Failed to insert sample data');
     }
   };
 
-  // Debug function to show raw data
   const showDebugInfo = () => {
     console.log('🔍 Current checks state:', checks);
     checks.forEach((check, index) => {
@@ -94,7 +111,6 @@ const Dashboard = ({ user }) => {
     });
   };
 
-  // Helper function to get payee name from check data
   const getPayeeName = (check) => {
     const fromJson = check.extractedInfo?.payee_name;
     const fromDb = check.payee_name;
@@ -109,7 +125,6 @@ const Dashboard = ({ user }) => {
     return null;
   };
 
-  // Helper function to get amount display
   const getAmountDisplay = (check) => {
     const amount = check.extractedInfo?.amount_number || check.amount_number;
     const currency = check.extractedInfo?.currency || check.currency_name || 'USD';
@@ -118,7 +133,6 @@ const Dashboard = ({ user }) => {
     return display;
   };
 
-  // Helper function to get check detail with fallback
   const getCheckDetail = (check, fieldName) => {
     const value = check.extractedInfo?.[fieldName] || check[fieldName];
     console.log(`📋 Check ${check.id} ${fieldName}:`, value);
@@ -253,4 +267,4 @@ const Dashboard = ({ user }) => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
