@@ -38,8 +38,7 @@ function App() {
       const token = localStorage.getItem('token');
       if (token) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-        const response = await axios.get(`${backendUrl}/api/auth/profile`);
+        const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/auth/profile');
         setUser(response.data.user);
       }
     } catch (error) {

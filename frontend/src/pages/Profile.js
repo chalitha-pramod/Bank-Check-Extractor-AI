@@ -24,8 +24,7 @@ const Profile = ({ user }) => {
 
   const fetchUserStats = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-      const response = await axios.get(`${backendUrl}/api/user/stats`);
+      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/user/stats');
       setStats(response.data.stats);
     } catch (error) {
       console.error('Failed to fetch user stats:', error);
@@ -42,25 +41,15 @@ const Profile = ({ user }) => {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-      const response = await axios.put(`${backendUrl}/api/user/profile`, {
+      const response = await axios.put('https://bank-check-extractor-ai-backend.vercel.app/api/user/profile', {
         username: formData.username,
         email: formData.email
       });
-      
+      setUser(response.data.user);
       toast.success('Profile updated successfully!');
-      
-      // Update local storage with new user data
-      const updatedUser = { ...user, ...response.data.user };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // Force page reload to update user context
-      window.location.reload();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to update profile. Please try again.';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -68,41 +57,18 @@ const Profile = ({ user }) => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    if (formData.new_password !== formData.confirm_password) {
-      toast.error('New passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.new_password.length < 6) {
-      toast.error('New password must be at least 6 characters long');
-      setLoading(false);
-      return;
-    }
-
+    setPasswordLoading(true);
     try {
-      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-      await axios.put(`${backendUrl}/api/user/password`, {
+      await axios.put('https://bank-check-extractor-ai-backend.vercel.app/api/user/password', {
         current_password: formData.current_password,
         new_password: formData.new_password
       });
-      
       toast.success('Password changed successfully!');
-      
-      // Clear password fields
-      setFormData({
-        ...formData,
-        current_password: '',
-        new_password: '',
-        confirm_password: ''
-      });
+      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to change password. Please try again.';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
-      setLoading(false);
+      setPasswordLoading(false);
     }
   };
 

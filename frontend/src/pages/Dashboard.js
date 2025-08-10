@@ -14,8 +14,7 @@ const Dashboard = ({ user }) => {
 
   const fetchChecks = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-      const response = await axios.get(`${backendUrl}/api/checks`);
+      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/checks');
       setChecks(response.data.checks || []);
     } catch (error) {
       console.error('Failed to fetch checks:', error);
@@ -75,8 +74,7 @@ const Dashboard = ({ user }) => {
 
   const handleInsertSampleData = async () => {
     try {
-      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-      await axios.post(`${backendUrl}/api/checks/insert-sample`);
+      await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/checks/insert-sample');
       toast.success('Sample data inserted successfully!');
       // Refresh the checks list
       fetchChecks();
