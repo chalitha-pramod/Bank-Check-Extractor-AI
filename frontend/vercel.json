@@ -19,6 +19,6 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://your-backend-domain.vercel.app"
+    "REACT_APP_API_URL": "https://bank-check-extractor-ai-backend.vercel.app"
   }
 }
