@@ -28,7 +28,8 @@ const InsertExtractedData = () => {
 
   const fetchCheck = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}`);
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      const response = await axios.get(`${backendUrl}/api/checks/${id}`);
       setCheck(response.data.check);
     } catch (error) {
       toast.error('Failed to fetch check details');
@@ -49,7 +50,8 @@ const InsertExtractedData = () => {
     setSubmitting(true);
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}/insert-extracted-data`, {
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      await axios.post(`${backendUrl}/api/checks/${id}/insert-extracted-data`, {
         extractedData: extractedData
       });
 
@@ -70,7 +72,8 @@ const InsertExtractedData = () => {
     setSubmitting(true);
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}/insert-extracted-data`, {
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      await axios.post(`${backendUrl}/api/checks/${id}/insert-extracted-data`, {
         extractedData: extractedData
       });
 

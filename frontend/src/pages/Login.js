@@ -24,7 +24,8 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/auth/login`, formData);
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      const response = await axios.post(`${backendUrl}/api/auth/login`, formData);
       onLogin(response.data.user, response.data.token);
       navigate('/dashboard');
     } catch (error) {

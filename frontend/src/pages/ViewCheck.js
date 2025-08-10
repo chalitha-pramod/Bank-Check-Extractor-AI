@@ -18,7 +18,7 @@ const ViewCheck = () => {
 
   const fetchCheck = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app'}/api/checks/${id}`);
       const checkData = response.data.check;
       setCheck(checkData);
       

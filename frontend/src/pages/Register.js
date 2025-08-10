@@ -40,7 +40,7 @@ const Register = ({ onLogin }) => {
     }
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/auth/register`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app'}/api/auth/register`, {
         username: formData.username,
         email: formData.email,
         password: formData.password,

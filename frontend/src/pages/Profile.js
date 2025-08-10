@@ -24,7 +24,8 @@ const Profile = ({ user }) => {
 
   const fetchUserStats = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/user/stats`);
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      const response = await axios.get(`${backendUrl}/api/user/stats`);
       setStats(response.data.stats);
     } catch (error) {
       console.error('Failed to fetch user stats:', error);
@@ -43,7 +44,8 @@ const Profile = ({ user }) => {
     setLoading(true);
 
     try {
-      const response = await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/user/profile`, {
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      const response = await axios.put(`${backendUrl}/api/user/profile`, {
         username: formData.username,
         email: formData.email
       });
@@ -81,7 +83,8 @@ const Profile = ({ user }) => {
     }
 
     try {
-      await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/user/password`, {
+      const backendUrl = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
+      await axios.put(`${backendUrl}/api/user/password`, {
         current_password: formData.current_password,
         new_password: formData.new_password
       });
