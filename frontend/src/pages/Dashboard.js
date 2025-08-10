@@ -14,26 +14,11 @@ const Dashboard = ({ user }) => {
 
   const fetchChecks = async () => {
     try {
-      const response = await axios.get('/api/checks');
-      const checksData = response.data.checks;
-      
-      console.log('📊 Raw checks data from API:', checksData);
-      
-      // Process each check to extract information from JSON
-      const processedChecks = checksData.map(check => {
-        const extractedInfo = extractCheckInformation(check);
-        console.log(`🔍 Check ID ${check.id} extracted info:`, extractedInfo);
-        return {
-          ...check,
-          extractedInfo: extractedInfo
-        };
-      });
-      
-      setChecks(processedChecks);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/checks`);
+      setChecks(response.data.checks || []);
     } catch (error) {
+      console.error('Failed to fetch checks:', error);
       toast.error('Failed to fetch checks');
-    } finally {
-      setLoading(false);
     }
   };
 

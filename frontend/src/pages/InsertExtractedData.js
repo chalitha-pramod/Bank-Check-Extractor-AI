@@ -28,7 +28,7 @@ const InsertExtractedData = () => {
 
   const fetchCheck = async () => {
     try {
-      const response = await axios.get(`/api/checks/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/checks/${id}`);
       setCheck(response.data.check);
     } catch (error) {
       toast.error('Failed to fetch check details');

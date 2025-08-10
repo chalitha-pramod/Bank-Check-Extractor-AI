@@ -24,10 +24,10 @@ const Profile = ({ user }) => {
 
   const fetchUserStats = async () => {
     try {
-      const response = await axios.get('/api/user/stats');
-      setStats(response.data);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/user/stats`);
+      setStats(response.data.stats);
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      console.error('Failed to fetch user stats:', error);
     }
   };
 
@@ -43,7 +43,7 @@ const Profile = ({ user }) => {
     setLoading(true);
 
     try {
-      const response = await axios.put('/api/user/profile', {
+      const response = await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/user/profile`, {
         username: formData.username,
         email: formData.email
       });
@@ -81,7 +81,7 @@ const Profile = ({ user }) => {
     }
 
     try {
-      await axios.put('/api/user/password', {
+      await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/user/password`, {
         current_password: formData.current_password,
         new_password: formData.new_password
       });

@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const { router: authRouter } = require('./routes/auth');
 const checksRouter = require('./routes/checks');
+const usersRouter = require('./routes/users');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/checks', checksRouter);
+app.use('/api/user', usersRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

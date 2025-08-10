@@ -10,8 +10,6 @@ import Dashboard from './pages/Dashboard';
 import ExtractCheck from './pages/ExtractCheck';
 import ViewCheck from './pages/ViewCheck';
 import Profile from './pages/Profile';
-import PostForm from './pages/PostForm';
-import PostDetail from './pages/PostDetail';
 import TestExtraction from './pages/TestExtraction';
 import CheckDetails from './pages/CheckDetails';
 import InsertExtractedData from './pages/InsertExtractedData';
@@ -37,11 +35,15 @@ function App() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get('/api/auth/profile');
-      setUser(response.data.user);
+      const token = localStorage.getItem('token');
+      if (token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/auth/profile`);
+        setUser(response.data.user);
+      }
     } catch (error) {
+      console.error('Failed to fetch user profile:', error);
       localStorage.removeItem('token');
-      delete axios.defaults.headers.common['Authorization'];
     } finally {
       setLoading(false);
     }
@@ -96,18 +98,6 @@ function App() {
             <Route 
               path="/profile" 
               element={user ? <Profile user={user} /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/posts/new" 
-              element={user ? <PostForm /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/posts/:id/edit" 
-              element={user ? <PostForm /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/posts/:id" 
-              element={user ? <PostDetail /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/test-extraction" 
