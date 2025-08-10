@@ -1,66 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { extractCheckInformation } from '../utils/jsonDataHelper';
+import { extractCheckInformation, formatCheckForDisplay } from '../utils/jsonDataHelper';
 
-// Change this if your backend URL changes
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://bank-check-extractor-ai-backend.vercel.app';
-
-const Dashboard = ({ user }) => {
-  const [checks, setChecks] = useState([]);
+const ViewCheck = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [check, setCheck] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [checkInfo, setCheckInfo] = useState(null);
+  const [displayData, setDisplayData] = useState(null);
 
   useEffect(() => {
-    fetchChecks();
-  }, []);
+    fetchCheck();
+  }, [id, fetchCheck]);
 
-  const fetchChecks = async () => {
+  const fetchCheck = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Authentication required. Please login again.');
-        return;
-      }
-
-      const response = await axios.get(`${API_BASE_URL}/api/checks`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setChecks(response.data.checks || []);
+      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${id}`);
+      const checkData = response.data.check;
+      setCheck(checkData);
+      
+      // Extract information using helper function
+      const extractedInfo = extractCheckInformation(checkData);
+      setCheckInfo(extractedInfo);
+      
+      // Format data for display
+      const formattedData = formatCheckForDisplay(extractedInfo);
+      setDisplayData(formattedData);
+      
+      console.log('📊 Check data:', checkData);
+      console.log('🔍 Extracted info:', extractedInfo);
+      console.log('📋 Display data:', formattedData);
+      
     } catch (error) {
-      if (error.response?.status === 401) {
-        toast.error('Authentication failed. Please login again.');
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      } else {
-        toast.error('Failed to fetch checks');
-      }
+      console.error('Failed to fetch check details:', error);
+      toast.error('Failed to fetch check details');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (checkId) => {
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`${API_BASE_URL}/api/checks/${checkId}`);
-        setChecks(checks.filter(check => check.id !== checkId));
+        await axios.delete(`/api/checks/${id}`);
         toast.success('Check deleted successfully');
+        navigate('/dashboard');
       } catch (error) {
         toast.error('Failed to delete check');
       }
     }
   };
 
-  const handleExportCSV = async (checkId) => {
+  const handleExportCSV = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/checks/${checkId}/export-csv`, {
+      const response = await axios.get(`/api/checks/${id}/export-csv`, {
         responseType: 'blob'
       });
+      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `bank_check_${checkId}.csv`);
+      link.setAttribute('download', `bank_check_${id}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -70,15 +73,16 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  const handleExportPDF = async (checkId) => {
+  const handleExportPDF = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/checks/${checkId}/export-pdf`, {
+      const response = await axios.get(`/api/checks/${id}/export-pdf`, {
         responseType: 'blob'
       });
+      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `bank_check_${checkId}.pdf`);
+      link.setAttribute('download', `bank_check_${id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -88,141 +92,241 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  const handleInsertSampleData = async () => {
-    try {
-      await axios.post(`${API_BASE_URL}/api/checks/insert-sample`);
-      toast.success('Sample data inserted successfully!');
-      fetchChecks();
-    } catch (error) {
-      toast.error('Failed to insert sample data');
-    }
-  };
-
-  const getPayeeName = (check) => {
-    const fromJson = check.extractedInfo?.payee_name;
-    const fromDb = check.payee_name;
-    const name = (fromJson && fromJson.trim()) || (fromDb && fromDb.trim());
-    return name || 'Unnamed Check';
-  };
-
-  const getPayeeBadge = (check) => {
-    if (check.extractedInfo?.payee_name && !check.payee_name) {
-      return (
-        <span className="badge" style={{ marginLeft: 8, background:'#e6f4ff', color:'#1d4ed8', border:'1px solid #93c5fd' }}>
-          AI
-        </span>
-      );
-    }
-    return null;
-  };
-
-  const getAmountDisplay = (check) => {
-    const amount = check.extractedInfo?.amount_number || check.amount_number;
-    const currency = check.extractedInfo?.currency || check.currency_name || 'USD';
-    return amount ? `${amount} ${currency}` : null;
-  };
-
-  const getCheckDetail = (check, fieldName) => {
-    return check.extractedInfo?.[fieldName] || check[fieldName];
-  };
-
   if (loading) {
     return (
       <div className="loading">
         <div className="loading-spinner"></div>
-        <span>Loading your checks...</span>
+        <span>Loading check details...</span>
+      </div>
+    );
+  }
+
+  if (!check) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>❌</div>
+        <h2 style={{ color: '#333', marginBottom: '1rem' }}>Check not found</h2>
+        <p style={{ color: '#666', marginBottom: '2rem' }}>
+          The check you're looking for doesn't exist or has been deleted.
+        </p>
+        <Link to="/dashboard" className="btn btn-secondary">
+          ← Back to Dashboard
+        </Link>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="dashboard-header">
-        <div>
-          <h1 className="welcome-message">Welcome back, {user.username}! 👋</h1>
-          <p style={{ color: '#666', marginTop: '0.5rem' }}>
-            Manage your extracted bank checks and extract new ones
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link to="/extract" className="btn btn-success">
-            <span style={{ fontSize: '18px', marginRight: '8px' }}>+</span>
-            Extract New Check
-          </Link>
-        </div>
+    <div className="card">
+      <div style={{ marginBottom: '2rem' }}>
+        <Link to="/dashboard" className="btn btn-secondary">
+          <span style={{ marginRight: '8px' }}>←</span>
+          Back to Dashboard
+        </Link>
       </div>
 
-      {checks.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📄</div>
-          <h3 style={{ color: '#333', marginBottom: '1rem' }}>
-            No checks extracted yet
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ color: '#333', marginBottom: '0.5rem' }}>
+          Bank Check Details
+        </h1>
+        <p style={{ color: '#666', fontSize: '14px' }}>
+          AI-extracted information from your uploaded check
+        </p>
+      </div>
+      
+      <div style={{ 
+        marginBottom: '2rem', 
+        padding: '1rem', 
+        backgroundColor: 'rgba(102, 126, 234, 0.1)', 
+        borderRadius: '8px',
+        fontSize: '14px',
+        color: '#667eea',
+        border: '1px solid rgba(102, 126, 234, 0.2)'
+      }}>
+        <strong>📅 Extracted On:</strong> {new Date(check.created_at).toLocaleString()}
+        {check.image_filename && (
+          <span> | <strong>📁 Image File:</strong> {check.image_filename}</span>
+        )}
+      </div>
+
+      {/* Check Image */}
+      {check.image_filename && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ color: '#667eea', marginBottom: '1rem' }}>
+            <span style={{ marginRight: '8px' }}>🖼️</span>
+            Original Image
           </h3>
-          <p style={{ color: '#666', marginBottom: '2rem' }}>
-            Upload your first bank check image to get started with AI-powered extraction
-          </p>
-          <Link to="/extract" className="btn btn-success">
-            Extract Your First Check
-          </Link>
-        </div>
-      ) : (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ color: '#333', margin: 0 }}>
-              Your Extracted Checks ({checks.length})
-            </h2>
-            <div style={{ fontSize: '14px', color: '#666' }}>
-              Last updated: {new Date().toLocaleTimeString()}
-            </div>
-          </div>
-          
-          {checks.map(check => (
-            <div key={check.id} className="check-card">
-              <div className="check-header">
-                <h3 className="check-title">
-                  {getPayeeName(check)}{getPayeeBadge(check)}
-                </h3>
-                <div className="check-amount">
-                  {getAmountDisplay(check) && (
-                    <span className="amount-display">
-                      {getAmountDisplay(check)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="check-details">
-                {getCheckDetail(check, 'cheque_date') && (
-                  <p><strong>Date:</strong> {getCheckDetail(check, 'cheque_date')}</p>
-                )}
-                {getCheckDetail(check, 'micr_code') && (
-                  <p><strong>MICR Code:</strong> {getCheckDetail(check, 'micr_code')}</p>
-                )}
-                {getCheckDetail(check, 'account_number') && (
-                  <p><strong>Account:</strong> {getCheckDetail(check, 'account_number')}</p>
-                )}
-                {getCheckDetail(check, 'amount_words') && (
-                  <p><strong>Amount in Words:</strong> {getCheckDetail(check, 'amount_words')}</p>
-                )}
-              </div>
-              
-              <div className="check-meta">
-                <span>Extracted: {new Date(check.created_at).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="check-actions">
-                <Link to={`/check/${check.id}`} className="btn btn-secondary">👁️ View Details</Link>
-                <Link to={`/insert-data/${check.id}`} className="btn btn-warning">📝 Insert Data</Link>
-                <button onClick={() => handleExportCSV(check.id)} className="btn btn-info">📊 Export CSV</button>
-                <button onClick={() => handleExportPDF(check.id)} className="btn btn-info">📄 Export PDF</button>
-                <button onClick={() => handleDelete(check.id)} className="btn btn-danger">🗑️ Delete</button>
-              </div>
-            </div>
-          ))}
+          <img 
+            src={`${(process.env.REACT_APP_API_BASE_URL || '')}/uploads/${check.image_filename}`}
+            alt="Bank Check"
+            style={{ 
+              maxWidth: '100%', 
+              maxHeight: '400px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            }}
+          />
         </div>
       )}
+
+      {/* Extracted Information */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ color: '#667eea', marginBottom: '1rem' }}>
+          <span style={{ marginRight: '8px' }}>📋</span>
+          Extracted Information
+        </h3>
+
+        {/* Basic Details Table */}
+        <h4>Basic Details</h4>
+        <table className="table" style={{ width: '100%', marginBottom: '1.5rem' }}>
+          <tbody>
+            <tr>
+              <td style={{ width: '220px' }}><strong>👤 Payee Name</strong></td>
+              <td>{displayData?.basicDetails?.payee_name || 'Not available'}</td>
+            </tr>
+            <tr>
+              <td><strong>💰 Amount</strong></td>
+              <td>{displayData?.basicDetails?.amount || 'Not available'}</td>
+            </tr>
+            <tr>
+              <td><strong>📝 Amount in Words</strong></td>
+              <td>{displayData?.basicDetails?.amount_words || 'Not available'}</td>
+            </tr>
+            <tr>
+              <td><strong>📅 Cheque Date</strong></td>
+              <td>{displayData?.basicDetails?.cheque_date || 'Not available'}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Bank Details Table */}
+        <h4>Bank Details</h4>
+        <table className="table" style={{ width: '100%', marginBottom: '1.5rem' }}>
+          <tbody>
+            <tr>
+              <td style={{ width: '220px' }}><strong>🔢 MICR Code</strong></td>
+              <td>{displayData?.bankDetails?.micr_code || 'Not available'}</td>
+            </tr>
+            <tr>
+              <td><strong>🏦 Account Number</strong></td>
+              <td>{displayData?.bankDetails?.account_number || 'Not available'}</td>
+            </tr>
+            <tr>
+              <td><strong>💱 Currency</strong></td>
+              <td>{displayData?.bankDetails?.currency || 'USD'}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Security Features Table (conditional) */}
+        {displayData?.securityFeatures?.anti_fraud_features && (
+          <>
+            <h4>Security Features</h4>
+            <table className="table" style={{ width: '100%' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '220px' }}><strong>🔒 Anti-Fraud Features</strong></td>
+                  <td>{displayData.securityFeatures.anti_fraud_features}</td>
+                </tr>
+              </tbody>
+            </table>
+          </>
+        )}
+      </div>
+
+      {/* Raw Extracted Text */}
+      {check.extracted_text && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ color: '#667eea', marginBottom: '1rem' }}>
+            <span style={{ marginRight: '8px' }}>📄</span>
+            Raw Extracted Text
+          </h3>
+          <div style={{ 
+            backgroundColor: 'rgba(102, 126, 234, 0.05)',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            whiteSpace: 'pre-wrap',
+            maxHeight: '300px',
+            overflowY: 'auto',
+            border: '1px solid rgba(102, 126, 234, 0.2)'
+          }}>
+            {check.extracted_text}
+          </div>
+        </div>
+      )}
+
+      {/* Data Source Information */}
+      <div style={{ 
+        marginBottom: '2rem', 
+        padding: '1rem', 
+        backgroundColor: 'rgba(255, 193, 7, 0.1)', 
+        borderRadius: '8px',
+        fontSize: '14px',
+        color: '#ffc107',
+        border: '1px solid rgba(255, 193, 7, 0.3)'
+      }}>
+        <strong>🔍 Data Source:</strong> 
+        {checkInfo?.jsonData ? ' JSON parsed from extracted_text' : ' Database fields only'}
+        {false && checkInfo?.jsonData && (
+          <span> | <strong>Fields found:</strong> {Object.keys(checkInfo.jsonData).join(', ')}</span>
+        )}
+      </div>
+
+      {/* No Data Warning */}
+      {(!displayData?.basicDetails?.payee_name || displayData.basicDetails.payee_name === 'Not available') && 
+       (!displayData?.basicDetails?.amount || displayData.basicDetails.amount === 'Not available') && (
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ 
+            padding: '1.5rem', 
+            backgroundColor: 'rgba(255, 193, 7, 0.1)', 
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 193, 7, 0.3)'
+          }}>
+            <h4 style={{ color: '#ffc107', marginBottom: '1rem' }}>
+              <span style={{ marginRight: '8px' }}>⚠️</span>
+              No Extracted Data Available
+            </h4>
+            <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+              This check doesn't have any extracted information. This could happen if:
+            </p>
+            <ul style={{ color: '#666', fontSize: '14px', marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem' }}>
+              <li>The AI extraction failed during processing</li>
+              <li>The image was not clear enough for extraction</li>
+              <li>The check was uploaded before AI extraction was implemented</li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '1rem', 
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        padding: '1.5rem',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.3)'
+      }}>
+        <button onClick={handleExportCSV} className="btn btn-info">
+          <span style={{ marginRight: '8px' }}>📊</span>
+          Export CSV
+        </button>
+        <button onClick={handleExportPDF} className="btn btn-info">
+          <span style={{ marginRight: '8px' }}>📄</span>
+          Export PDF
+        </button>
+        <button onClick={handleDelete} className="btn btn-danger">
+          <span style={{ marginRight: '8px' }}>🗑️</span>
+          Delete Check
+        </button>
+      </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default ViewCheck; 
