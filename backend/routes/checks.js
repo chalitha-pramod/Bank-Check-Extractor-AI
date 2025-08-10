@@ -24,7 +24,7 @@ try {
 }
 
 // Function to extract check information using AI
-async function extractCheckInfo(imagePath) {
+async function extractCheckInfo(imageBuffer) {
   // Always try to use AI - no manual fallback
   if (!genAI) {
     throw new Error('Gemini AI service not available');
@@ -33,8 +33,6 @@ async function extractCheckInfo(imagePath) {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
-    // Read image file
-    const imageBuffer = fs.readFileSync(imagePath);
     const imageData = {
       inlineData: {
         data: imageBuffer.toString('base64'),
@@ -98,7 +96,7 @@ async function extractCheckInfo(imagePath) {
         }
       };
     }
-    } catch (error) {
+  } catch (error) {
     console.error('❌ Gemini AI extraction error:', error.message);
     
     // Throw error instead of returning manual fallback
@@ -107,20 +105,8 @@ async function extractCheckInfo(imagePath) {
 }
 
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for file uploads - using memory storage for Vercel
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -184,12 +170,12 @@ router.post('/extract', authenticateToken, upload.single('file'), async (req, re
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const imagePath = req.file.path;
+    const imageBuffer = req.file.buffer;
     
     console.log('🚀 Starting automatic Gemini AI extraction...');
     
     // Extract check information using AI - no manual fallback
-    const extractionResult = await extractCheckInfo(imagePath);
+    const extractionResult = await extractCheckInfo(imageBuffer);
     const checkData = extractionResult.data;
     
     console.log('✅ Extraction completed, saving to database...');
@@ -204,7 +190,7 @@ router.post('/extract', authenticateToken, upload.single('file'), async (req, re
         req.user.id, checkData.micr_code, checkData.cheque_date, 
         checkData.amount_number, checkData.amount_words, checkData.currency_name,
         checkData.payee_name, checkData.account_number, checkData.anti_fraud_features,
-        req.file.filename, checkData.extracted_text
+        req.file.originalname, checkData.extracted_text
       ],
       function(err) {
         if (err) {
