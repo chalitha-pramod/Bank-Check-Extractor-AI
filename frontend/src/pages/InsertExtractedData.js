@@ -28,7 +28,7 @@ const InsertExtractedData = () => {
 
   const fetchCheck = async () => {
     try {
-      const response = await axios.get(`/api/checks/${id}`);
+      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${id}`);
       setCheck(response.data.check);
     } catch (error) {
       toast.error('Failed to fetch check details');
@@ -49,7 +49,7 @@ const InsertExtractedData = () => {
     setSubmitting(true);
 
     try {
-      await axios.post(`/api/checks/${id}/insert-extracted-data`, {
+      await axios.post(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${id}/insert-extracted-data`, {
         extractedData: extractedData
       });
 
@@ -70,7 +70,7 @@ const InsertExtractedData = () => {
     setSubmitting(true);
 
     try {
-      await axios.post(`/api/checks/${id}/insert-extracted-data`, {
+      await axios.post(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${id}/insert-extracted-data`, {
         extractedData: extractedData
       });
 

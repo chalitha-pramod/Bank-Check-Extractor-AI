@@ -18,7 +18,7 @@ const ViewCheck = () => {
 
   const fetchCheck = async () => {
     try {
-      const response = await axios.get(`/api/checks/${id}`);
+      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${id}`);
       const checkData = response.data.check;
       setCheck(checkData);
       
@@ -45,7 +45,7 @@ const ViewCheck = () => {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`/api/checks/${id}`);
+        await axios.delete(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${id}`);
         toast.success('Check deleted successfully');
         navigate('/dashboard');
       } catch (error) {

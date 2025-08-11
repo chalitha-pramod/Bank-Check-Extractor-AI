@@ -26,7 +26,7 @@ const Dashboard = ({ user }) => {
       setError(null);
       console.log('🔍 Fetching checks...');
       
-      const response = await axios.get('/api/checks', {
+      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/checks', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -69,7 +69,7 @@ const Dashboard = ({ user }) => {
   const handleDelete = async (checkId) => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`/api/checks/${checkId}`, {
+        await axios.delete(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -86,7 +86,7 @@ const Dashboard = ({ user }) => {
 
   const handleExportCSV = async (checkId) => {
     try {
-              const response = await axios.get(`/api/checks/${checkId}/export-csv`, {
+              const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-csv`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
@@ -109,7 +109,7 @@ const Dashboard = ({ user }) => {
 
   const handleExportPDF = async (checkId) => {
     try {
-              const response = await axios.get(`/api/checks/${checkId}/export-pdf`, {
+              const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-pdf`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
@@ -215,7 +215,7 @@ const Dashboard = ({ user }) => {
       setDbConnectionStatus('unknown');
       console.log('🔍 Testing database connection...');
       
-      const response = await fetch('/api/test-db');
+      const response = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/test-db');
       const data = await response.json();
       
       if (response.ok) {

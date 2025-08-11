@@ -13,7 +13,7 @@ export const testDatabaseHealth = async () => {
   try {
     // Test 1: Basic API connectivity
     console.log('🔍 Testing basic API connectivity...');
-    const healthResponse = await fetch('/api/health');
+    const healthResponse = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/health');
     healthChecks.checks.apiHealth = {
       status: healthResponse.ok ? 'success' : 'failed',
       statusCode: healthResponse.status,
@@ -23,7 +23,7 @@ export const testDatabaseHealth = async () => {
 
     // Test 2: Database connection
     console.log('🔍 Testing database connection...');
-    const dbResponse = await fetch('/api/test-db');
+    const dbResponse = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/test-db');
     healthChecks.checks.database = {
       status: dbResponse.ok ? 'success' : 'failed',
       statusCode: dbResponse.status,
@@ -33,7 +33,7 @@ export const testDatabaseHealth = async () => {
 
     // Test 3: Authentication endpoint
     console.log('🔍 Testing authentication endpoint...');
-    const authResponse = await fetch('/api/auth/profile', {
+    const authResponse = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/auth/profile', {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token') || 'test'}`
       }
@@ -47,7 +47,7 @@ export const testDatabaseHealth = async () => {
 
     // Test 4: Checks endpoint (without auth)
     console.log('🔍 Testing checks endpoint...');
-    const checksResponse = await fetch('/api/checks');
+    const checksResponse = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/checks');
     healthChecks.checks.checksEndpoint = {
       status: checksResponse.status === 401 ? 'success' : 'failed', // Should return 401 without auth
       statusCode: checksResponse.status,
@@ -149,7 +149,7 @@ export const getDatabaseDiagnostics = async () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const authResponse = await fetch('/api/checks', {
+        const authResponse = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/checks', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

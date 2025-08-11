@@ -36,7 +36,7 @@ const ExtractCheck = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('/api/checks/extract', formData, {
+      const response = await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/checks/extract', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

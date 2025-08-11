@@ -24,7 +24,7 @@ const Profile = ({ user }) => {
 
   const fetchUserStats = async () => {
     try {
-      const response = await axios.get('/api/user/stats');
+      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/user/stats');
       setStats(response.data.stats);
     } catch (error) {
       console.error('Failed to fetch user stats:', error);
@@ -42,7 +42,7 @@ const Profile = ({ user }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.put('/api/user/profile', {
+      const response = await axios.put('https://bank-check-extractor-ai-backend.vercel.app/api/user/profile', {
         username: formData.username,
         email: formData.email
       });
@@ -59,7 +59,7 @@ const Profile = ({ user }) => {
     e.preventDefault();
     setPasswordLoading(true);
     try {
-      await axios.put('/api/user/password', {
+      await axios.put('https://bank-check-extractor-ai-backend.vercel.app/api/user/password', {
         current_password: formData.current_password,
         new_password: formData.new_password
       });
