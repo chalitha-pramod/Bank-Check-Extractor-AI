@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { extractCheckInformation } from '../utils/jsonDataHelper';
+import { logHealthReport, displayHealthReport } from '../utils/databaseHealth';
 
 const Dashboard = ({ user }) => {
   const [checks, setChecks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [showHealthReport, setShowHealthReport] = useState(false);
+  const [healthReportContainer, setHealthReportContainer] = useState(null);
 
   useEffect(() => {
     fetchChecks();
@@ -182,6 +185,22 @@ const Dashboard = ({ user }) => {
     fetchChecks();
   };
 
+  const handleHealthCheck = async () => {
+    try {
+      setShowHealthReport(true);
+      // Log to console first
+      await logHealthReport();
+      
+      // Display in UI if container is ready
+      if (healthReportContainer) {
+        await displayHealthReport(healthReportContainer);
+      }
+    } catch (error) {
+      console.error('Health check failed:', error);
+      toast.error('Health check failed');
+    }
+  };
+
   // Debug function to show raw data
   const showDebugInfo = () => {
     console.log('🔍 Current checks state:', checks);
@@ -251,10 +270,20 @@ const Dashboard = ({ user }) => {
           <button onClick={handleRefresh} className="btn btn-primary">
             🔄 Retry Connection
           </button>
+          <button onClick={handleHealthCheck} className="btn btn-info">
+            🏥 Run Health Check
+          </button>
           <button onClick={showDebugInfo} className="btn btn-secondary">
             🐛 Show Debug Info
           </button>
         </div>
+        
+        {showHealthReport && (
+          <div 
+            ref={setHealthReportContainer}
+            style={{ marginTop: '2rem' }}
+          />
+        )}
         
         <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
           <h4 style={{ color: '#495057', marginBottom: '0.5rem' }}>Troubleshooting Tips:</h4>
@@ -263,6 +292,7 @@ const Dashboard = ({ user }) => {
             <li>Verify your internet connection</li>
             <li>Check browser console for detailed errors</li>
             <li>Try refreshing the page</li>
+            <li>Run the health check for detailed diagnostics</li>
             <li>Contact support if the issue persists</li>
           </ul>
         </div>
@@ -287,11 +317,22 @@ const Dashboard = ({ user }) => {
           <button onClick={handleInsertSampleData} className="btn btn-info">
             📊 Insert Sample Data
           </button>
+          <button onClick={handleHealthCheck} className="btn btn-warning">
+            🏥 Health Check
+          </button>
           <button onClick={showDebugInfo} className="btn btn-secondary">
             🐛 Debug Info
           </button>
         </div>
       </div>
+
+      {/* Health Report Display */}
+      {showHealthReport && (
+        <div 
+          ref={setHealthReportContainer}
+          style={{ marginBottom: '2rem' }}
+        />
+      )}
 
       {checks.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -311,6 +352,9 @@ const Dashboard = ({ user }) => {
             <button onClick={handleRefresh} className="btn btn-secondary">
               🔄 Refresh
             </button>
+            <button onClick={handleHealthCheck} className="btn btn-warning">
+              🏥 Health Check
+            </button>
           </div>
           
           <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeaa7' }}>
@@ -321,6 +365,16 @@ const Dashboard = ({ user }) => {
               <li>View and manage your extracted data</li>
               <li>Export to CSV or PDF formats</li>
             </ol>
+          </div>
+          
+          <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f8d7da', borderRadius: '8px', border: '1px solid #f5c6cb' }}>
+            <h4 style={{ color: '#721c24', marginBottom: '0.5rem' }}>🔧 If You're Having Issues:</h4>
+            <ul style={{ textAlign: 'left', color: '#721c24', fontSize: '14px' }}>
+              <li>Run the Health Check to diagnose connection issues</li>
+              <li>Check if you're running in a hosted environment</li>
+              <li>Verify backend deployment status</li>
+              <li>Check browser console for error messages</li>
+            </ul>
           </div>
         </div>
       ) : (
