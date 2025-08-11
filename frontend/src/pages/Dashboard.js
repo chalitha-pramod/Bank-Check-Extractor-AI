@@ -282,6 +282,47 @@ const Dashboard = ({ user }) => {
     }
   };
 
+  // Helper function to test database data structure
+  const testDatabaseDataStructure = () => {
+    if (checks.length === 0) {
+      toast.info('No checks available to test data structure');
+      return;
+    }
+
+    console.group('🔍 DATABASE DATA STRUCTURE ANALYSIS');
+    
+    checks.forEach((check, index) => {
+      console.group(`Check #${check.id} (${index + 1}/${checks.length})`);
+      
+      const rawData = getRawDatabaseData(check);
+      console.log('📊 Raw Database Data:', rawData);
+      
+      // Check which fields have data
+      const fieldsWithData = getDatabaseFields(check);
+      console.log('✅ Fields with data:', fieldsWithData.map(f => f.key));
+      
+      // Check for missing fields
+      const allFields = ['micr_code', 'cheque_date', 'amount_number', 'amount_words', 'currency_name', 'payee_name', 'account_number', 'anti_fraud_features', 'image_filename', 'extracted_text'];
+      const missingFields = allFields.filter(field => !check[field] || check[field].toString().trim() === '');
+      console.log('❌ Missing/Empty fields:', missingFields);
+      
+      // Check data types
+      const dataTypes = {};
+      allFields.forEach(field => {
+        if (check[field]) {
+          dataTypes[field] = typeof check[field];
+        }
+      });
+      console.log('🔍 Data types:', dataTypes);
+      
+      console.groupEnd();
+    });
+    
+    console.groupEnd();
+    
+    toast.success('Database structure analysis completed! Check console for details.');
+  };
+
   // Helper function to get amount display
   const getAmountDisplay = (check) => {
     const amount = check.extractedInfo?.amount_number || check.amount_number;
@@ -418,6 +459,9 @@ const Dashboard = ({ user }) => {
           <button onClick={testDatabaseConnection} className="btn btn-info">
             🗄️ Test DB Connection
           </button>
+          <button onClick={testDatabaseDataStructure} className="btn btn-secondary">
+            🔍 Test Data Structure
+          </button>
           <button onClick={handleHealthCheck} className="btn btn-warning">
             🏥 Run Health Check
           </button>
@@ -511,6 +555,9 @@ const Dashboard = ({ user }) => {
           <button onClick={testDatabaseConnection} className="btn btn-primary">
             🗄️ Test DB Connection
           </button>
+          <button onClick={testDatabaseDataStructure} className="btn btn-secondary">
+            🔍 Test Data Structure
+          </button>
           <button onClick={handleHealthCheck} className="btn btn-warning">
             🏥 Health Check
           </button>
@@ -545,6 +592,9 @@ const Dashboard = ({ user }) => {
             </button>
             <button onClick={testDatabaseConnection} className="btn btn-primary">
               🗄️ Test DB Connection
+            </button>
+            <button onClick={testDatabaseDataStructure} className="btn btn-secondary">
+              🔍 Test Data Structure
             </button>
             <button onClick={handleRefresh} className="btn btn-secondary">
               🔄 Refresh
