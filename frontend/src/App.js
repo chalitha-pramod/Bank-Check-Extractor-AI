@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+import { initializeMobileOptimizations } from './utils/mobileUtils';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -23,6 +24,9 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize mobile optimizations
+    initializeMobileOptimizations();
+    
     // Check if user is logged in on app load
     const token = localStorage.getItem('token');
     if (token) {
@@ -126,6 +130,7 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
+          toastClassName="mobile-toast"
         />
       </div>
     </Router>
