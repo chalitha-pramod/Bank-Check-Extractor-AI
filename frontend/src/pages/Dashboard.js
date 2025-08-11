@@ -466,36 +466,54 @@ const Dashboard = ({ user }) => {
                 )}
               </div>
 
+              {/* Key Information Summary */}
+              <div style={{ 
+                background: 'rgba(102, 126, 234, 0.1)', 
+                padding: '1rem', 
+                borderRadius: '8px', 
+                marginBottom: '1rem',
+                border: '1px solid rgba(102, 126, 234, 0.2)'
+              }}>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                  gap: '1rem',
+                  fontSize: '14px'
+                }}>
+                  {getCheckDate(check) && (
+                    <div>
+                      <strong style={{ color: '#667eea' }}>📅 Check Date:</strong><br/>
+                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDate(check)}</span>
+                    </div>
+                  )}
+                  {getCheckDetail(check, 'micr_code') && (
+                    <div>
+                      <strong style={{ color: '#667eea' }}>🏦 MICR Code:</strong><br/>
+                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDetail(check, 'micr_code')}</span>
+                    </div>
+                  )}
+                  {getCheckDetail(check, 'account_number') && (
+                    <div>
+                      <strong style={{ color: '#667eea' }}>💳 Account Number:</strong><br/>
+                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDetail(check, 'account_number')}</span>
+                    </div>
+                  )}
+                  {getCheckDetail(check, 'amount_words') && (
+                    <div>
+                      <strong style={{ color: '#667eea' }}>📝 Amount in Words:</strong><br/>
+                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDetail(check, 'amount_words')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Details */}
               <div className="check-details">
-                {getCheckDate(check) && (
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-                    color: 'white', 
-                    padding: '0.75rem 1rem', 
-                    borderRadius: '8px', 
-                    marginBottom: '1rem',
-                    textAlign: 'center',
-                    fontWeight: '600',
-                    fontSize: '1.1rem'
-                  }}>
-                    📅 Check Date: {getCheckDate(check)}
-                  </div>
-                )}
-                
-                {getCheckDetail(check, 'micr_code') && (
-                  <p><strong>MICR Code:</strong> {getCheckDetail(check, 'micr_code')}</p>
-                )}
-                {getCheckDetail(check, 'amount_words') && (
-                  <p><strong>Amount in Words:</strong> {getCheckDetail(check, 'amount_words')}</p>
-                )}
-                {getCheckDetail(check, 'account_number') && (
-                  <p><strong>Account Number:</strong> {getCheckDetail(check, 'account_number')}</p>
-                )}
                 {getCheckDetail(check, 'anti_fraud_features') && (
                   <p><strong>Anti-Fraud Features:</strong> {getCheckDetail(check, 'anti_fraud_features')}</p>
                 )}
                 {getCheckDetail(check, 'extracted_text') && (
-                  <p><strong>Extracted Text:</strong> {getCheckDate(check) ? 'Full extracted text available' : getCheckDetail(check, 'extracted_text')}</p>
+                  <p><strong>Extracted Text:</strong> {getCheckDetail(check, 'extracted_text')}</p>
                 )}
               </div>
 
