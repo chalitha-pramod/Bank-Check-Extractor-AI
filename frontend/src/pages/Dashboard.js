@@ -694,25 +694,13 @@ const Dashboard = ({ user }) => {
               </div>
 
               {/* Database Data Debug Section */}
-              <div style={{ 
-                marginTop: '1rem', 
-                padding: '1rem', 
-                backgroundColor: '#f8f9fa', 
-                borderRadius: '8px', 
-                border: '1px solid #dee2e6',
-                fontSize: '12px'
-              }}>
+              <div className="database-debug-section">
                 <details>
-                  <summary style={{ cursor: 'pointer', fontWeight: '600', color: '#495057' }}>
+                  <summary className="database-debug-summary">
                     🔍 Database Data Structure (Click to expand)
                   </summary>
-                  <div style={{ marginTop: '0.5rem', fontFamily: 'monospace' }}>
-                    <pre style={{ 
-                      whiteSpace: 'pre-wrap', 
-                      wordBreak: 'break-word',
-                      fontSize: '11px',
-                      lineHeight: '1.4'
-                    }}>
+                  <div className="database-debug-content">
+                    <pre className="database-debug-pre">
                       {JSON.stringify(getRawDatabaseData(check), null, 2)}
                     </pre>
                   </div>
