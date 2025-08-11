@@ -3,7 +3,7 @@ import axios from 'axios';
 export const testBackendConnection = async () => {
   try {
     console.log('Testing backend health...');
-    const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/health');
+    const response = await axios.get('/api/health');
     console.log('✅ Backend health check passed:', response.data);
     return true;
   } catch (error) {
@@ -15,7 +15,7 @@ export const testBackendConnection = async () => {
 export const testAuthEndpoint = async () => {
   try {
     console.log('Testing authentication...');
-    const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/auth/test');
+    const response = await axios.get('/api/auth/test');
     console.log('✅ Authentication test passed:', response.data);
     return true;
   } catch (error) {

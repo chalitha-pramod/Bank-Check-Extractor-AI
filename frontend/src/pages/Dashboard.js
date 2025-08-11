@@ -24,77 +24,43 @@ const Dashboard = ({ user }) => {
     try {
       setLoading(true);
       setError(null);
+      console.log('🔍 Fetching checks...');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No authentication token found');
-        toast.error('Authentication required. Please login again.');
-        setError('Authentication required');
-        return;
-      }
-
-      console.log('🔍 Fetching checks from:', 'https://bank-check-extractor-ai-backend.vercel.app/api/checks');
-      
-      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/checks', {
+      const response = await axios.get('/api/checks', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        timeout: 10000 // 10 second timeout
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
-      console.log('📊 API Response:', response.data);
-      
-      if (response.data && response.data.checks) {
-        setChecks(response.data.checks);
-        console.log('✅ Checks loaded successfully:', response.data.checks.length, 'checks');
-      } else {
-        console.warn('⚠️ No checks data in response:', response.data);
-        setChecks([]);
-      }
+      console.log('✅ Checks fetched successfully:', response.data);
+      setChecks(response.data.checks || []);
       
     } catch (error) {
-      console.error('❌ Failed to fetch checks:', error);
+      console.error('❌ Error fetching checks:', error);
       
-      let errorMessage = 'Failed to fetch checks';
-      let shouldRetry = false;
-      
-      if (error.response) {
-        // Server responded with error status
-        if (error.response.status === 401) {
-          errorMessage = 'Authentication failed. Please login again.';
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return;
-        } else if (error.response.status === 500) {
-          errorMessage = 'Server error. Database connection issue.';
-          shouldRetry = true;
-        } else if (error.response.status === 404) {
-          errorMessage = 'API endpoint not found.';
-        } else {
-          errorMessage = `Server error: ${error.response.status}`;
-        }
-      } else if (error.request) {
-        // Request was made but no response received
-        errorMessage = 'No response from server. Check your connection.';
-        shouldRetry = true;
-      } else {
-        // Something else happened
-        errorMessage = error.message || 'Network error';
-        shouldRetry = true;
+      if (error.response?.status === 401) {
+        setError('Authentication failed. Please log in again.');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return;
       }
       
-      setError(errorMessage);
-      toast.error(errorMessage);
-      
-      // Auto-retry for connection issues
-      if (shouldRetry && retryCount < 3) {
-        console.log(`🔄 Retrying in 3 seconds... (attempt ${retryCount + 1}/3)`);
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          fetchChecks();
-        }, 3000);
+      if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+        return;
       }
       
+      if (error.response?.status === 404) {
+        setError('API endpoint not found. Please check your deployment.');
+        return;
+      }
+      
+      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        setError('Network error. Please check your internet connection and try again.');
+        return;
+      }
+      
+      setError(`Failed to fetch checks: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -103,7 +69,7 @@ const Dashboard = ({ user }) => {
   const handleDelete = async (checkId) => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}`, {
+        await axios.delete(`/api/checks/${checkId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -120,7 +86,7 @@ const Dashboard = ({ user }) => {
 
   const handleExportCSV = async (checkId) => {
     try {
-      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-csv`, {
+              const response = await axios.get(`/api/checks/${checkId}/export-csv`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
@@ -143,7 +109,7 @@ const Dashboard = ({ user }) => {
 
   const handleExportPDF = async (checkId) => {
     try {
-      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-pdf`, {
+              const response = await axios.get(`/api/checks/${checkId}/export-pdf`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
@@ -167,7 +133,7 @@ const Dashboard = ({ user }) => {
   const handleInsertSampleData = async () => {
     try {
       setLoading(true);
-      await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/checks/insert-sample', {}, {
+              await axios.post('/api/checks/insert-sample', {}, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -249,7 +215,7 @@ const Dashboard = ({ user }) => {
       setDbConnectionStatus('unknown');
       console.log('🔍 Testing database connection...');
       
-      const response = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/test-db');
+      const response = await fetch('/api/test-db');
       const data = await response.json();
       
       if (response.ok) {

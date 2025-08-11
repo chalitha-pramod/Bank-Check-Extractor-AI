@@ -71,7 +71,7 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/auth/login', formData);
+      const response = await axios.post('/api/auth/login', formData);
       onLogin(response.data.user, response.data.token);
       navigate('/dashboard');
     } catch (error) {
