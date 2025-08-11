@@ -42,7 +42,7 @@ function App() {
       const token = localStorage.getItem('token');
       if (token) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        const response = await axios.get('/api/auth/profile', {
+        const response = await axios.get('/api/auth/profile');
         setUser(response.data.user);
       }
     } catch (error) {
