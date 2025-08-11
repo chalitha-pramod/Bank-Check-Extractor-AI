@@ -246,6 +246,7 @@ const Dashboard = ({ user }) => {
   const testDatabaseConnection = async () => {
     try {
       setLoading(true);
+      setDbConnectionStatus('unknown');
       console.log('🔍 Testing database connection...');
       
       const response = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/test-db');
@@ -255,10 +256,19 @@ const Dashboard = ({ user }) => {
         console.log('✅ Database connection successful:', data);
         toast.success('✅ Database connection successful!');
         setDbConnectionStatus('connected');
+        
+        // Show additional database info
+        if (data.message) {
+          console.log('📊 Database Info:', data.message);
+        }
+        if (data.test) {
+          console.log('🧪 Database Test Result:', data.test);
+        }
+        
         return true;
       } else {
         console.error('❌ Database connection failed:', data);
-        toast.error('❌ Database connection failed');
+        toast.error(`❌ Database connection failed: ${data.message || 'Unknown error'}`);
         setDbConnectionStatus('failed');
         return false;
       }
@@ -283,9 +293,50 @@ const Dashboard = ({ user }) => {
 
   // Helper function to get check detail with fallback
   const getCheckDetail = (check, fieldName) => {
-    const value = check.extractedInfo?.[fieldName] || check[fieldName];
+    // First try to get from database fields, then from extractedInfo if it exists
+    const value = check[fieldName] || check.extractedInfo?.[fieldName];
     console.log(`📋 Check ${check.id} ${fieldName}:`, value);
     return value;
+  };
+
+  // Helper function to get all available database fields
+  const getDatabaseFields = (check) => {
+    const fields = [
+      { key: 'micr_code', label: '🏦 MICR Code', icon: '🏦' },
+      { key: 'cheque_date', label: '📅 Check Date', icon: '📅' },
+      { key: 'amount_number', label: '💰 Amount (Numbers)', icon: '💰' },
+      { key: 'amount_words', label: '📝 Amount in Words', icon: '📝' },
+      { key: 'currency_name', label: '💱 Currency', icon: '💱' },
+      { key: 'payee_name', label: '👤 Payee Name', icon: '👤' },
+      { key: 'account_number', label: '💳 Account Number', icon: '💳' },
+      { key: 'anti_fraud_features', label: '🔒 Anti-Fraud Features', icon: '🔒' },
+      { key: 'image_filename', label: '🖼️ Image File', icon: '🖼️' },
+      { key: 'created_at', label: '📅 Created Date', icon: '📅' }
+    ];
+
+    return fields.filter(field => {
+      const value = check[field.key];
+      return value && value.toString().trim() !== '';
+    });
+  };
+
+  // Helper function to get raw database data for debugging
+  const getRawDatabaseData = (check) => {
+    return {
+      id: check.id,
+      user_id: check.user_id,
+      micr_code: check.micr_code,
+      cheque_date: check.cheque_date,
+      amount_number: check.amount_number,
+      amount_words: check.amount_words,
+      currency_name: check.currency_name,
+      payee_name: check.payee_name,
+      account_number: check.account_number,
+      anti_fraud_features: check.anti_fraud_features,
+      image_filename: check.image_filename,
+      extracted_text: check.extracted_text,
+      created_at: check.created_at
+    };
   };
 
   // Helper function to format date clearly
@@ -568,30 +619,17 @@ const Dashboard = ({ user }) => {
               {/* Key Information Summary */}
               <div className="check-info-summary">
                 <div className="check-info-grid">
-                  {getCheckDate(check) && (
-                    <div className="check-info-item">
-                      <div className="check-info-label">📅 Check Date</div>
-                      <div className="check-info-value">{getCheckDate(check)}</div>
+                  {getDatabaseFields(check).map((field) => (
+                    <div key={field.key} className="check-info-item">
+                      <div className="check-info-label">{field.label}</div>
+                      <div className="check-info-value">
+                        {field.key === 'created_at' 
+                          ? formatDate(check[field.key])
+                          : check[field.key]
+                        }
+                      </div>
                     </div>
-                  )}
-                  {getCheckDetail(check, 'micr_code') && (
-                    <div className="check-info-item">
-                      <div className="check-info-label">🏦 MICR Code</div>
-                      <div className="check-info-value">{getCheckDetail(check, 'micr_code')}</div>
-                    </div>
-                  )}
-                  {getCheckDetail(check, 'account_number') && (
-                    <div className="check-info-item">
-                      <div className="check-info-label">💳 Account Number</div>
-                      <div className="check-info-value">{getCheckDetail(check, 'account_number')}</div>
-                    </div>
-                  )}
-                  {getCheckDetail(check, 'amount_words') && (
-                    <div className="check-info-item">
-                      <div className="check-info-label">📝 Amount in Words</div>
-                      <div className="check-info-value">{getCheckDetail(check, 'amount_words')}</div>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
@@ -603,6 +641,32 @@ const Dashboard = ({ user }) => {
                 {getCheckDetail(check, 'extracted_text') && (
                   <p><strong>Extracted Text:</strong> {getCheckDetail(check, 'extracted_text')}</p>
                 )}
+              </div>
+
+              {/* Database Data Debug Section */}
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '8px', 
+                border: '1px solid #dee2e6',
+                fontSize: '12px'
+              }}>
+                <details>
+                  <summary style={{ cursor: 'pointer', fontWeight: '600', color: '#495057' }}>
+                    🔍 Database Data Structure (Click to expand)
+                  </summary>
+                  <div style={{ marginTop: '0.5rem', fontFamily: 'monospace' }}>
+                    <pre style={{ 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word',
+                      fontSize: '11px',
+                      lineHeight: '1.4'
+                    }}>
+                      {JSON.stringify(getRawDatabaseData(check), null, 2)}
+                    </pre>
+                  </div>
+                </details>
               </div>
 
               <div className="check-actions">
