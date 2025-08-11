@@ -247,6 +247,59 @@ const Dashboard = ({ user }) => {
     return value;
   };
 
+  // Helper function to format date clearly
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        // If it's not a valid date, try to parse common formats
+        const parsed = Date.parse(dateString);
+        if (isNaN(parsed)) {
+          return dateString; // Return as-is if can't parse
+        }
+        return new Date(parsed).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString; // Return as-is if error
+    }
+  };
+
+  // Helper function to get check date with clear formatting
+  const getCheckDate = (check) => {
+    // Priority: extracted date, then database date
+    const extractedDate = check.extractedInfo?.cheque_date;
+    const dbDate = check.cheque_date;
+    
+    if (extractedDate) {
+      return formatDate(extractedDate);
+    } else if (dbDate) {
+      return formatDate(dbDate);
+    }
+    
+    return null;
+  };
+
+  // Helper function to get creation date
+  const getCreationDate = (check) => {
+    if (check.created_at) {
+      return formatDate(check.created_at);
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -389,8 +442,14 @@ const Dashboard = ({ user }) => {
                   </h3>
                   <div className="check-meta">
                     <span>ID: {check.id}</span>
+                    {getCheckDate(check) && (
+                      <>
+                        <span> • </span>
+                        <span>Check Date: {getCheckDate(check)}</span>
+                      </>
+                    )}
                     <span> • </span>
-                    <span>Created: {new Date(check.created_at).toLocaleDateString()}</span>
+                    <span>Created: {getCreationDate(check)}</span>
                     {check.image_filename && (
                       <>
                         <span> • </span>
@@ -408,11 +467,23 @@ const Dashboard = ({ user }) => {
               </div>
 
               <div className="check-details">
+                {getCheckDate(check) && (
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                    color: 'white', 
+                    padding: '0.75rem 1rem', 
+                    borderRadius: '8px', 
+                    marginBottom: '1rem',
+                    textAlign: 'center',
+                    fontWeight: '600',
+                    fontSize: '1.1rem'
+                  }}>
+                    📅 Check Date: {getCheckDate(check)}
+                  </div>
+                )}
+                
                 {getCheckDetail(check, 'micr_code') && (
                   <p><strong>MICR Code:</strong> {getCheckDetail(check, 'micr_code')}</p>
-                )}
-                {getCheckDetail(check, 'cheque_date') && (
-                  <p><strong>Check Date:</strong> {getCheckDetail(check, 'cheque_date')}</p>
                 )}
                 {getCheckDetail(check, 'amount_words') && (
                   <p><strong>Amount in Words:</strong> {getCheckDetail(check, 'amount_words')}</p>
@@ -424,7 +495,7 @@ const Dashboard = ({ user }) => {
                   <p><strong>Anti-Fraud Features:</strong> {getCheckDetail(check, 'anti_fraud_features')}</p>
                 )}
                 {getCheckDetail(check, 'extracted_text') && (
-                  <p><strong>Extracted Text:</strong> {getCheckDetail(check, 'extracted_text')}</p>
+                  <p><strong>Extracted Text:</strong> {getCheckDate(check) ? 'Full extracted text available' : getCheckDetail(check, 'extracted_text')}</p>
                 )}
               </div>
 
