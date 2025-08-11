@@ -434,6 +434,13 @@ const Dashboard = ({ user }) => {
         <div>
           {checks.map((check) => (
             <div key={check.id} className="check-card">
+              {/* Prominent Date Display */}
+              {getCheckDate(check) && (
+                <div className="check-date-display">
+                  📅 Check Date: {getCheckDate(check)}
+                </div>
+              )}
+
               <div className="check-header">
                 <div>
                   <h3 className="check-title">
@@ -442,12 +449,6 @@ const Dashboard = ({ user }) => {
                   </h3>
                   <div className="check-meta">
                     <span>ID: {check.id}</span>
-                    {getCheckDate(check) && (
-                      <>
-                        <span> • </span>
-                        <span>Check Date: {getCheckDate(check)}</span>
-                      </>
-                    )}
                     <span> • </span>
                     <span>Created: {getCreationDate(check)}</span>
                     {check.image_filename && (
@@ -467,41 +468,30 @@ const Dashboard = ({ user }) => {
               </div>
 
               {/* Key Information Summary */}
-              <div style={{ 
-                background: 'rgba(102, 126, 234, 0.1)', 
-                padding: '1rem', 
-                borderRadius: '8px', 
-                marginBottom: '1rem',
-                border: '1px solid rgba(102, 126, 234, 0.2)'
-              }}>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                  gap: '1rem',
-                  fontSize: '14px'
-                }}>
+              <div className="check-info-summary">
+                <div className="check-info-grid">
                   {getCheckDate(check) && (
-                    <div>
-                      <strong style={{ color: '#667eea' }}>📅 Check Date:</strong><br/>
-                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDate(check)}</span>
+                    <div className="check-info-item">
+                      <div className="check-info-label">📅 Check Date</div>
+                      <div className="check-info-value">{getCheckDate(check)}</div>
                     </div>
                   )}
                   {getCheckDetail(check, 'micr_code') && (
-                    <div>
-                      <strong style={{ color: '#667eea' }}>🏦 MICR Code:</strong><br/>
-                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDetail(check, 'micr_code')}</span>
+                    <div className="check-info-item">
+                      <div className="check-info-label">🏦 MICR Code</div>
+                      <div className="check-info-value">{getCheckDetail(check, 'micr_code')}</div>
                     </div>
                   )}
                   {getCheckDetail(check, 'account_number') && (
-                    <div>
-                      <strong style={{ color: '#667eea' }}>💳 Account Number:</strong><br/>
-                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDetail(check, 'account_number')}</span>
+                    <div className="check-info-item">
+                      <div className="check-info-label">💳 Account Number</div>
+                      <div className="check-info-value">{getCheckDetail(check, 'account_number')}</div>
                     </div>
                   )}
                   {getCheckDetail(check, 'amount_words') && (
-                    <div>
-                      <strong style={{ color: '#667eea' }}>📝 Amount in Words:</strong><br/>
-                      <span style={{ color: '#333', fontWeight: '500' }}>{getCheckDetail(check, 'amount_words')}</span>
+                    <div className="check-info-item">
+                      <div className="check-info-label">📝 Amount in Words</div>
+                      <div className="check-info-value">{getCheckDetail(check, 'amount_words')}</div>
                     </div>
                   )}
                 </div>
