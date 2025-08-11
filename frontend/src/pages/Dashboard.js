@@ -12,9 +12,12 @@ const Dashboard = ({ user }) => {
   const [retryCount, setRetryCount] = useState(0);
   const [showHealthReport, setShowHealthReport] = useState(false);
   const [healthReportContainer, setHealthReportContainer] = useState(null);
+  const [dbConnectionStatus, setDbConnectionStatus] = useState('unknown'); // 'unknown', 'connected', 'failed'
 
   useEffect(() => {
     fetchChecks();
+    // Test database connection on component mount
+    testDatabaseConnection();
   }, []);
 
   const fetchChecks = async () => {
@@ -220,8 +223,16 @@ const Dashboard = ({ user }) => {
   const getPayeeName = (check) => {
     const fromJson = check.extractedInfo?.payee_name;
     const fromDb = check.payee_name;
-    const name = (fromJson && fromJson.trim()) || (fromDb && fromDb.trim());
-    return name || 'Unnamed Check';
+    
+    // Try to get the best available payee name
+    if (fromJson && fromJson.trim()) {
+      return fromJson.trim();
+    } else if (fromDb && fromDb.trim()) {
+      return fromDb.trim();
+    }
+    
+    // If no payee name found, show a placeholder with check ID
+    return `Check #${check.id}`;
   };
 
   const getPayeeBadge = (check) => {
@@ -229,6 +240,36 @@ const Dashboard = ({ user }) => {
       return <span className="badge" style={{ marginLeft: 8, background:'#e6f4ff', color:'#1d4ed8', border:'1px solid #93c5fd' }}>AI</span>;
     }
     return null;
+  };
+
+  // Helper function to test database connection
+  const testDatabaseConnection = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Testing database connection...');
+      
+      const response = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/test-db');
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Database connection successful:', data);
+        toast.success('✅ Database connection successful!');
+        setDbConnectionStatus('connected');
+        return true;
+      } else {
+        console.error('❌ Database connection failed:', data);
+        toast.error('❌ Database connection failed');
+        setDbConnectionStatus('failed');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Database connection error:', error);
+      toast.error('❌ Database connection error: ' + error.message);
+      setDbConnectionStatus('failed');
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Helper function to get amount display
@@ -323,7 +364,10 @@ const Dashboard = ({ user }) => {
           <button onClick={handleRefresh} className="btn btn-primary">
             🔄 Retry Connection
           </button>
-          <button onClick={handleHealthCheck} className="btn btn-info">
+          <button onClick={testDatabaseConnection} className="btn btn-info">
+            🗄️ Test DB Connection
+          </button>
+          <button onClick={handleHealthCheck} className="btn btn-warning">
             🏥 Run Health Check
           </button>
           <button onClick={showDebugInfo} className="btn btn-secondary">
@@ -361,6 +405,49 @@ const Dashboard = ({ user }) => {
           <p style={{ color: '#666', marginTop: '0.5rem' }}>
             You have {checks.length} check{checks.length !== 1 ? 's' : ''} in your account
           </p>
+          {/* Database Connection Status */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem', 
+            marginTop: '0.5rem',
+            fontSize: '14px'
+          }}>
+            <span>Database Status:</span>
+            {dbConnectionStatus === 'connected' && (
+              <span style={{ 
+                color: '#28a745', 
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                🟢 Connected
+              </span>
+            )}
+            {dbConnectionStatus === 'failed' && (
+              <span style={{ 
+                color: '#dc3545', 
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                🔴 Failed
+              </span>
+            )}
+            {dbConnectionStatus === 'unknown' && (
+              <span style={{ 
+                color: '#ffc107', 
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                🟡 Testing...
+              </span>
+            )}
+          </div>
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -369,6 +456,9 @@ const Dashboard = ({ user }) => {
           </Link>
           <button onClick={handleInsertSampleData} className="btn btn-info">
             📊 Insert Sample Data
+          </button>
+          <button onClick={testDatabaseConnection} className="btn btn-primary">
+            🗄️ Test DB Connection
           </button>
           <button onClick={handleHealthCheck} className="btn btn-warning">
             🏥 Health Check
@@ -401,6 +491,9 @@ const Dashboard = ({ user }) => {
             </Link>
             <button onClick={handleInsertSampleData} className="btn btn-info">
               📊 Insert Sample Data
+            </button>
+            <button onClick={testDatabaseConnection} className="btn btn-primary">
+              🗄️ Test DB Connection
             </button>
             <button onClick={handleRefresh} className="btn btn-secondary">
               🔄 Refresh
@@ -441,11 +534,16 @@ const Dashboard = ({ user }) => {
                 </div>
               )}
 
+              {/* Prominent Payee Name Display */}
+              <div className="check-payee-display">
+                👤 Payee: {getPayeeName(check)}
+                {getPayeeBadge(check)}
+              </div>
+
               <div className="check-header">
                 <div>
                   <h3 className="check-title">
-                    {getPayeeName(check)}
-                    {getPayeeBadge(check)}
+                    Check #{check.id}
                   </h3>
                   <div className="check-meta">
                     <span>ID: {check.id}</span>

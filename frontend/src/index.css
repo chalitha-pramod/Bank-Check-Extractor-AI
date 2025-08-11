@@ -937,6 +937,33 @@ body::before {
   animation: shimmer 2s infinite;
 }
 
+/* Enhanced Payee Name Display Styles */
+.check-payee-display {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.check-payee-display::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+  animation-delay: 1s;
+}
+
 @keyframes shimmer {
   0% { left: -100%; }
   100% { left: 100%; }
@@ -1000,6 +1027,12 @@ body::before {
     margin-bottom: 1.25rem;
   }
   
+  .check-payee-display {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+  
   .check-info-summary {
     padding: 1.25rem;
     margin-bottom: 1.25rem;
@@ -1017,6 +1050,12 @@ body::before {
 
 @media (max-width: 480px) {
   .check-date-display {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .check-payee-display {
     padding: 0.75rem 1rem;
     font-size: 1rem;
     margin-bottom: 1rem;
