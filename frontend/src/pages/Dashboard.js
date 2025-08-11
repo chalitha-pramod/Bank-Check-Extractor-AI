@@ -7,6 +7,8 @@ import { extractCheckInformation } from '../utils/jsonDataHelper';
 const Dashboard = ({ user }) => {
   const [checks, setChecks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     fetchChecks();
@@ -14,29 +16,79 @@ const Dashboard = ({ user }) => {
 
   const fetchChecks = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const token = localStorage.getItem('token');
       if (!token) {
         console.error('No authentication token found');
         toast.error('Authentication required. Please login again.');
+        setError('Authentication required');
         return;
       }
 
+      console.log('🔍 Fetching checks from:', 'https://bank-check-extractor-ai-backend.vercel.app/api/checks');
+      
       const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/checks', {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
-      setChecks(response.data.checks || []);
-    } catch (error) {
-      console.error('Failed to fetch checks:', error);
-      if (error.response?.status === 401) {
-        toast.error('Authentication failed. Please login again.');
-        // Redirect to login or clear token
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+      
+      console.log('📊 API Response:', response.data);
+      
+      if (response.data && response.data.checks) {
+        setChecks(response.data.checks);
+        console.log('✅ Checks loaded successfully:', response.data.checks.length, 'checks');
       } else {
-        toast.error('Failed to fetch checks');
+        console.warn('⚠️ No checks data in response:', response.data);
+        setChecks([]);
       }
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch checks:', error);
+      
+      let errorMessage = 'Failed to fetch checks';
+      let shouldRetry = false;
+      
+      if (error.response) {
+        // Server responded with error status
+        if (error.response.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
+        } else if (error.response.status === 500) {
+          errorMessage = 'Server error. Database connection issue.';
+          shouldRetry = true;
+        } else if (error.response.status === 404) {
+          errorMessage = 'API endpoint not found.';
+        } else {
+          errorMessage = `Server error: ${error.response.status}`;
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = 'No response from server. Check your connection.';
+        shouldRetry = true;
+      } else {
+        // Something else happened
+        errorMessage = error.message || 'Network error';
+        shouldRetry = true;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
+      
+      // Auto-retry for connection issues
+      if (shouldRetry && retryCount < 3) {
+        console.log(`🔄 Retrying in 3 seconds... (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          fetchChecks();
+        }, 3000);
+      }
+      
     } finally {
       setLoading(false);
     }
@@ -45,10 +97,16 @@ const Dashboard = ({ user }) => {
   const handleDelete = async (checkId) => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`/api/checks/${checkId}`);
+        await axios.delete(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
         setChecks(checks.filter(check => check.id !== checkId));
         toast.success('Check deleted successfully');
       } catch (error) {
+        console.error('Failed to delete check:', error);
         toast.error('Failed to delete check');
       }
     }
@@ -56,7 +114,10 @@ const Dashboard = ({ user }) => {
 
   const handleExportCSV = async (checkId) => {
     try {
-      const response = await axios.get(`/api/checks/${checkId}/export-csv`, {
+      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-csv`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         responseType: 'blob'
       });
       
@@ -69,13 +130,17 @@ const Dashboard = ({ user }) => {
       link.remove();
       toast.success('CSV exported successfully');
     } catch (error) {
+      console.error('Failed to export CSV:', error);
       toast.error('Failed to export CSV');
     }
   };
 
   const handleExportPDF = async (checkId) => {
     try {
-      const response = await axios.get(`/api/checks/${checkId}/export-pdf`, {
+      const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         responseType: 'blob'
       });
       
@@ -88,26 +153,44 @@ const Dashboard = ({ user }) => {
       link.remove();
       toast.success('PDF exported successfully');
     } catch (error) {
+      console.error('Failed to export PDF:', error);
       toast.error('Failed to export PDF');
     }
   };
 
   const handleInsertSampleData = async () => {
     try {
-      await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/checks/insert-sample');
+      setLoading(true);
+      await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/checks/insert-sample', {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       toast.success('Sample data inserted successfully!');
       // Refresh the checks list
       fetchChecks();
     } catch (error) {
+      console.error('Failed to insert sample data:', error);
       toast.error('Failed to insert sample data');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRetryCount(0);
+    fetchChecks();
   };
 
   // Debug function to show raw data
   const showDebugInfo = () => {
     console.log('🔍 Current checks state:', checks);
+    console.log('🔍 User info:', user);
+    console.log('🔍 Error state:', error);
+    console.log('🔍 Loading state:', loading);
+    
     checks.forEach((check, index) => {
-      console.log(`\n--- Check ${index + 1} Debug Info ---`);
+      console.log(`📊 Check ${index + 1}:`, check);
       console.log('Raw check data:', check);
       console.log('Extracted info:', check.extractedInfo);
       console.log('JSON data:', check.extractedInfo?.jsonData);
@@ -149,7 +232,40 @@ const Dashboard = ({ user }) => {
     return (
       <div className="loading">
         <div className="loading-spinner"></div>
-        <span>Loading your checks...</span>
+        <div>Loading your checks...</div>
+        {retryCount > 0 && <div style={{ fontSize: '14px', marginTop: '10px', color: '#666' }}>
+          Retry attempt {retryCount}/3
+        </div>}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+        <h2 style={{ color: '#dc3545', marginBottom: '1rem' }}>Connection Error</h2>
+        <p style={{ color: '#666', marginBottom: '2rem' }}>{error}</p>
+        
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button onClick={handleRefresh} className="btn btn-primary">
+            🔄 Retry Connection
+          </button>
+          <button onClick={showDebugInfo} className="btn btn-secondary">
+            🐛 Show Debug Info
+          </button>
+        </div>
+        
+        <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+          <h4 style={{ color: '#495057', marginBottom: '0.5rem' }}>Troubleshooting Tips:</h4>
+          <ul style={{ textAlign: 'left', color: '#666', fontSize: '14px' }}>
+            <li>Check if the backend server is running</li>
+            <li>Verify your internet connection</li>
+            <li>Check browser console for detailed errors</li>
+            <li>Try refreshing the page</li>
+            <li>Contact support if the issue persists</li>
+          </ul>
+        </div>
       </div>
     );
   }
@@ -158,111 +274,118 @@ const Dashboard = ({ user }) => {
     <div>
       <div className="dashboard-header">
         <div>
-          <h1 className="welcome-message">Welcome back, {user.username}! 👋</h1>
+          <h1 className="welcome-message">Welcome back, {user?.username || 'User'}!</h1>
           <p style={{ color: '#666', marginTop: '0.5rem' }}>
-            Manage your extracted bank checks and extract new ones
+            You have {checks.length} check{checks.length !== 1 ? 's' : ''} in your account
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <Link to="/extract" className="btn btn-success">
-            <span style={{ fontSize: '18px', marginRight: '8px' }}>+</span>
-            Extract New Check
+            📷 Extract New Check
           </Link>
+          <button onClick={handleInsertSampleData} className="btn btn-info">
+            📊 Insert Sample Data
+          </button>
+          <button onClick={showDebugInfo} className="btn btn-secondary">
+            🐛 Debug Info
+          </button>
         </div>
       </div>
 
       {checks.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📄</div>
-          <h3 style={{ color: '#333', marginBottom: '1rem' }}>
-            No checks extracted yet
-          </h3>
+          <h2 style={{ color: '#333', marginBottom: '1rem' }}>No Checks Found</h2>
           <p style={{ color: '#666', marginBottom: '2rem' }}>
-            Upload your first bank check image to get started with AI-powered extraction
+            It looks like you haven't extracted any checks yet, or there might be a database connection issue.
           </p>
-          <Link to="/extract" className="btn btn-success">
-            Extract Your First Check
-          </Link>
+          
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/extract" className="btn btn-success">
+              📷 Extract Your First Check
+            </Link>
+            <button onClick={handleInsertSampleData} className="btn btn-info">
+              📊 Insert Sample Data
+            </button>
+            <button onClick={handleRefresh} className="btn btn-secondary">
+              🔄 Refresh
+            </button>
+          </div>
+          
+          <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeaa7' }}>
+            <h4 style={{ color: '#856404', marginBottom: '0.5rem' }}>💡 Getting Started:</h4>
+            <ol style={{ textAlign: 'left', color: '#856404', fontSize: '14px' }}>
+              <li>Upload a bank check image</li>
+              <li>AI will automatically extract information</li>
+              <li>View and manage your extracted data</li>
+              <li>Export to CSV or PDF formats</li>
+            </ol>
+          </div>
         </div>
       ) : (
         <div>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '1.5rem' 
-          }}>
-            <h2 style={{ color: '#333', margin: 0 }}>
-              Your Extracted Checks ({checks.length})
-            </h2>
-            <div style={{ fontSize: '14px', color: '#666' }}>
-              Last updated: {new Date().toLocaleTimeString()}
-            </div>
-          </div>
-          
-          {checks.map(check => (
+          {checks.map((check) => (
             <div key={check.id} className="check-card">
               <div className="check-header">
-                <h3 className="check-title">
-                  {getPayeeName(check)}{getPayeeBadge(check)}
-                </h3>
-                <div className="check-amount">
-                  {getAmountDisplay(check) && (
-                    <span className="amount-display">
-                      {getAmountDisplay(check)}
-                    </span>
-                  )}
+                <div>
+                  <h3 className="check-title">
+                    {getPayeeName(check)}
+                    {getPayeeBadge(check)}
+                  </h3>
+                  <div className="check-meta">
+                    <span>ID: {check.id}</span>
+                    <span> • </span>
+                    <span>Created: {new Date(check.created_at).toLocaleDateString()}</span>
+                    {check.image_filename && (
+                      <>
+                        <span> • </span>
+                        <span>Image: {check.image_filename}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-              
-              <div className="check-details">
-                {getCheckDetail(check, 'cheque_date') && (
-                  <p><strong>Date:</strong> {getCheckDetail(check, 'cheque_date')}</p>
+                
+                {getAmountDisplay(check) && (
+                  <div className="amount-display">
+                    {getAmountDisplay(check)}
+                  </div>
                 )}
+              </div>
+
+              <div className="check-details">
                 {getCheckDetail(check, 'micr_code') && (
                   <p><strong>MICR Code:</strong> {getCheckDetail(check, 'micr_code')}</p>
                 )}
-                {getCheckDetail(check, 'account_number') && (
-                  <p><strong>Account:</strong> {getCheckDetail(check, 'account_number')}</p>
+                {getCheckDetail(check, 'cheque_date') && (
+                  <p><strong>Check Date:</strong> {getCheckDetail(check, 'cheque_date')}</p>
                 )}
                 {getCheckDetail(check, 'amount_words') && (
                   <p><strong>Amount in Words:</strong> {getCheckDetail(check, 'amount_words')}</p>
                 )}
+                {getCheckDetail(check, 'account_number') && (
+                  <p><strong>Account Number:</strong> {getCheckDetail(check, 'account_number')}</p>
+                )}
+                {getCheckDetail(check, 'anti_fraud_features') && (
+                  <p><strong>Anti-Fraud Features:</strong> {getCheckDetail(check, 'anti_fraud_features')}</p>
+                )}
+                {getCheckDetail(check, 'extracted_text') && (
+                  <p><strong>Extracted Text:</strong> {getCheckDetail(check, 'extracted_text')}</p>
+                )}
               </div>
-              
-              <div className="check-meta">
-                <span>Extracted: {new Date(check.created_at).toLocaleDateString()}</span>
-              </div>
-              
+
               <div className="check-actions">
-                <Link to={`/check/${check.id}`} className="btn btn-secondary">
-                  <span style={{ marginRight: '4px' }}>👁️</span>
-                  View Details
+                <Link to={`/check/${check.id}`} className="btn btn-primary">
+                  👁️ View Details
                 </Link>
-                <Link to={`/insert-data/${check.id}`} className="btn btn-warning">
-                  <span style={{ marginRight: '4px' }}>📝</span>
-                  Insert Data
-                </Link>
-                <button 
-                  onClick={() => handleExportCSV(check.id)} 
-                  className="btn btn-info"
-                >
-                  <span style={{ marginRight: '4px' }}>📊</span>
-                  Export CSV
+                <button onClick={() => handleExportCSV(check.id)} className="btn btn-success">
+                  📊 Export CSV
                 </button>
-                <button 
-                  onClick={() => handleExportPDF(check.id)} 
-                  className="btn btn-info"
-                >
-                  <span style={{ marginRight: '4px' }}>📄</span>
-                  Export PDF
+                <button onClick={() => handleExportPDF(check.id)} className="btn btn-info">
+                  📄 Export PDF
                 </button>
-                <button 
-                  onClick={() => handleDelete(check.id)} 
-                  className="btn btn-danger"
-                >
-                  <span style={{ marginRight: '4px' }}>🗑️</span>
-                  Delete
+                <button onClick={() => handleDelete(check.id)} className="btn btn-danger">
+                  🗑️ Delete
                 </button>
               </div>
             </div>
