@@ -700,6 +700,21 @@ const Dashboard = ({ user }) => {
                     🔍 Database Data Structure (Click to expand)
                   </summary>
                   <div className="database-debug-content">
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h5 style={{ color: '#667eea', marginBottom: '0.5rem' }}>📊 Field Mapping Summary:</h5>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', fontSize: '11px' }}>
+                        {Object.entries(getRawDatabaseData(check)).map(([key, value]) => (
+                          <div key={key} style={{ 
+                            padding: '0.25rem 0.5rem', 
+                            backgroundColor: value ? '#d4edda' : '#f8d7da',
+                            borderRadius: '4px',
+                            border: `1px solid ${value ? '#c3e6cb' : '#f5c6cb'}`
+                          }}>
+                            <strong>{key}:</strong> {value ? '✅ Has Data' : '❌ Empty'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <pre className="database-debug-pre">
                       {JSON.stringify(getRawDatabaseData(check), null, 2)}
                     </pre>
