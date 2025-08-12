@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 // API Configuration for different environments
 const getApiConfig = () => {
   // Development environment
@@ -34,7 +36,7 @@ export const API_ENDPOINTS = {
 export const createAxiosInstance = () => {
   const config = getApiConfig();
   
-  const instance = require('axios').create({
+  const instance = axios.create({
     baseURL: config.baseURL,
     timeout: config.timeout,
     withCredentials: config.withCredentials,
