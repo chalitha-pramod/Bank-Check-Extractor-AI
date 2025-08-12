@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import { createAxiosInstance, API_ENDPOINTS } from '../utils/apiConfig';
 import { extractCheckInformation } from '../utils/jsonDataHelper';
 import { logHealthReport, displayHealthReport } from '../utils/databaseHealth';
 
@@ -26,11 +26,8 @@ const Dashboard = ({ user }) => {
       setError(null);
       console.log('🔍 Fetching checks...');
       
-      const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/checks', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const api = createAxiosInstance();
+      const response = await api.get(API_ENDPOINTS.CHECKS);
       
       console.log('✅ Checks fetched successfully:', response.data);
       setChecks(response.data.checks || []);
@@ -69,11 +66,8 @@ const Dashboard = ({ user }) => {
   const handleDelete = async (checkId) => {
     if (window.confirm('Are you sure you want to delete this check?')) {
       try {
-        await axios.delete(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        const api = createAxiosInstance();
+        await api.delete(API_ENDPOINTS.DELETE_CHECK(checkId));
         
         setChecks(checks.filter(check => check.id !== checkId));
         toast.success('Check deleted successfully');
@@ -86,10 +80,8 @@ const Dashboard = ({ user }) => {
 
   const handleExportCSV = async (checkId) => {
     try {
-              const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-csv`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+      const api = createAxiosInstance();
+      const response = await api.get(API_ENDPOINTS.EXPORT_CSV(checkId), {
         responseType: 'blob'
       });
       
@@ -109,10 +101,8 @@ const Dashboard = ({ user }) => {
 
   const handleExportPDF = async (checkId) => {
     try {
-              const response = await axios.get(`https://bank-check-extractor-ai-backend.vercel.app/api/checks/${checkId}/export-pdf`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+      const api = createAxiosInstance();
+      const response = await api.get(API_ENDPOINTS.EXPORT_PDF(checkId), {
         responseType: 'blob'
       });
       
@@ -133,11 +123,8 @@ const Dashboard = ({ user }) => {
   const handleInsertSampleData = async () => {
     try {
       setLoading(true);
-              await axios.post('/api/checks/insert-sample', {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const api = createAxiosInstance();
+      await api.post(API_ENDPOINTS.INSERT_SAMPLE, {});
       toast.success('Sample data inserted successfully!');
       // Refresh the checks list
       fetchChecks();
@@ -215,10 +202,11 @@ const Dashboard = ({ user }) => {
       setDbConnectionStatus('unknown');
       console.log('🔍 Testing database connection...');
       
-      const response = await fetch('https://bank-check-extractor-ai-backend.vercel.app/api/test-db');
-      const data = await response.json();
+      const api = createAxiosInstance();
+      const response = await api.get(API_ENDPOINTS.TEST_DB);
       
-      if (response.ok) {
+      if (response.status === 200) {
+        const data = response.data;
         console.log('✅ Database connection successful:', data);
         toast.success('✅ Database connection successful!');
         setDbConnectionStatus('connected');
@@ -233,8 +221,8 @@ const Dashboard = ({ user }) => {
         
         return true;
       } else {
-        console.error('❌ Database connection failed:', data);
-        toast.error(`❌ Database connection failed: ${data.message || 'Unknown error'}`);
+        console.error('❌ Database connection failed:', response);
+        toast.error(`❌ Database connection failed: ${response.data?.message || 'Unknown error'}`);
         setDbConnectionStatus('failed');
         return false;
       }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { createAxiosInstance, API_ENDPOINTS } from './utils/apiConfig';
 import { initializeMobileOptimizations } from './utils/mobileUtils';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
@@ -15,10 +15,6 @@ import TestExtraction from './pages/TestExtraction';
 import CheckDetails from './pages/CheckDetails';
 import InsertExtractedData from './pages/InsertExtractedData';
 
-// Set up axios defaults
-// In production on Vercel, set REACT_APP_API_BASE_URL to your backend URL
-axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL || '';
-
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +26,6 @@ function App() {
     // Check if user is logged in on app load
     const token = localStorage.getItem('token');
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUserProfile();
     } else {
       setLoading(false);
@@ -41,8 +36,8 @@ function App() {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        const response = await axios.get('https://bank-check-extractor-ai-backend.vercel.app/api/auth/profile');
+        const api = createAxiosInstance();
+        const response = await api.get(API_ENDPOINTS.PROFILE);
         setUser(response.data.user);
       }
     } catch (error) {
@@ -56,13 +51,11 @@ function App() {
   const login = (userData, token) => {
     setUser(userData);
     localStorage.setItem('token', token);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   if (loading) {

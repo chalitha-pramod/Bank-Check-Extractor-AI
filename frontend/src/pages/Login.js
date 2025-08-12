@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import { createAxiosInstance, API_ENDPOINTS } from '../utils/apiConfig';
 import logo from '../assets/logo.svg';
 
 const Login = ({ onLogin }) => {
@@ -71,19 +71,49 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/auth/login', formData);
+      const api = createAxiosInstance();
+      const response = await api.post(API_ENDPOINTS.LOGIN, formData);
       onLogin(response.data.user, response.data.token);
       navigate('/dashboard');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-      toast.error(errorMessage);
+      console.error('Login error:', error);
       
-      // Handle specific error cases
-      if (error.response?.status === 401) {
-        setErrors({ password: 'Invalid username or password' });
-      } else if (error.response?.status === 404) {
-        setErrors({ username: 'User not found' });
+      let errorMessage = 'Login failed. Please try again.';
+      let fieldError = {};
+      
+      if (error.response) {
+        // Server responded with error
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        switch (status) {
+          case 401:
+            errorMessage = data.message || 'Invalid username or password';
+            fieldError = { password: 'Invalid username or password' };
+            break;
+          case 404:
+            errorMessage = data.message || 'User not found';
+            fieldError = { username: 'User not found' };
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          case 0:
+            errorMessage = 'Network error. Please check your connection.';
+            break;
+          default:
+            errorMessage = data.message || `Error ${status}: Please try again.`;
+        }
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage = 'No response from server. Please check your connection.';
+      } else {
+        // Other errors
+        errorMessage = error.message || 'An unexpected error occurred.';
       }
+      
+      toast.error(errorMessage);
+      setErrors(fieldError);
     } finally {
       setLoading(false);
     }

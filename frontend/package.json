@@ -20,7 +20,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "vercel-build": "DISABLE_ESLINT_PLUGIN=true npm run build"
+    "vercel-build": "DISABLE_ESLINT_PLUGIN=true npm run build",
+    "build:prod": "REACT_APP_ENVIRONMENT=production npm run build",
+    "build:vercel": "REACT_APP_ENVIRONMENT=production DISABLE_ESLINT_PLUGIN=true npm run build"
   },
   "eslintConfig": {
     "extends": [
@@ -39,6 +41,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "proxy": "http://localhost:5000"
+  }
 }

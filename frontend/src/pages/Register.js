@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import { createAxiosInstance, API_ENDPOINTS } from '../utils/apiConfig';
 import logo from '../assets/logo.svg';
 
 const Register = ({ onLogin }) => {
@@ -89,7 +89,8 @@ const Register = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://bank-check-extractor-ai-backend.vercel.app/api/auth/register', {
+      const api = createAxiosInstance();
+      const response = await api.post(API_ENDPOINTS.REGISTER, {
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -100,17 +101,47 @@ const Register = ({ onLogin }) => {
       toast.success(response.data.message);
       navigate('/login');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
-      toast.error(errorMessage);
+      console.error('Registration error:', error);
       
-      // Handle specific error cases
-      if (error.response?.status === 409) {
-        if (error.response.data.message.includes('username')) {
-          setErrors({ username: 'Username already exists' });
-        } else if (error.response.data.message.includes('email')) {
-          setErrors({ email: 'Email already exists' });
+      let errorMessage = 'Registration failed. Please try again.';
+      let fieldError = {};
+      
+      if (error.response) {
+        // Server responded with error
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        switch (status) {
+          case 409:
+            errorMessage = data.message || 'User already exists';
+            if (data.message?.includes('username')) {
+              fieldError = { username: 'Username already exists' };
+            } else if (data.message?.includes('email')) {
+              fieldError = { email: 'Email already exists' };
+            }
+            break;
+          case 400:
+            errorMessage = data.message || 'Invalid data provided';
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          case 0:
+            errorMessage = 'Network error. Please check your connection.';
+            break;
+          default:
+            errorMessage = data.message || `Error ${status}: Please try again.`;
         }
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage = 'No response from server. Please check your connection.';
+      } else {
+        // Other errors
+        errorMessage = error.message || 'An unexpected error occurred.';
       }
+      
+      toast.error(errorMessage);
+      setErrors(fieldError);
     } finally {
       setLoading(false);
     }
