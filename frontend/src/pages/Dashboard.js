@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { createAxiosInstance, API_ENDPOINTS } from '../utils/apiConfig';
+import { createAxiosInstance, createDirectAxiosCall, API_ENDPOINTS } from '../utils/apiConfig';
 import { extractCheckInformation } from '../utils/jsonDataHelper';
 import { logHealthReport, displayHealthReport } from '../utils/databaseHealth';
 

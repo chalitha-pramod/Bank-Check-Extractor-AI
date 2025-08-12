@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { createAxiosInstance, API_ENDPOINTS } from '../utils/apiConfig';
+import { createAxiosInstance, createDirectAxiosCall, API_ENDPOINTS } from '../utils/apiConfig';
+import { debugApiConfig, testApiEndpoints, getAvailableHttpClients } from '../utils/debugApi';
+import fetchApi from '../utils/fetchApi';
 import logo from '../assets/logo.svg';
 
 const Login = ({ onLogin }) => {
@@ -71,8 +73,23 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const api = createAxiosInstance();
-      const response = await api.post(API_ENDPOINTS.LOGIN, formData);
+      // Try the main axios instance first
+      let response;
+      try {
+        const api = createAxiosInstance();
+        response = await api.post(API_ENDPOINTS.LOGIN, formData);
+      } catch (axiosError) {
+        console.warn('Main axios instance failed, trying direct call:', axiosError);
+        try {
+          // Fallback to direct axios call
+          response = await createDirectAxiosCall(API_ENDPOINTS.LOGIN, 'POST', formData);
+        } catch (directAxiosError) {
+          console.warn('Direct axios call failed, trying fetch API:', directAxiosError);
+          // Final fallback to fetch API
+          response = await fetchApi.post(API_ENDPOINTS.LOGIN, formData);
+        }
+      }
+      
       onLogin(response.data.user, response.data.token);
       navigate('/dashboard');
     } catch (error) {
@@ -122,6 +139,44 @@ const Login = ({ onLogin }) => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSubmit(e);
+    }
+  };
+
+  // Debug function to help troubleshoot API issues
+  const handleDebug = async () => {
+    console.log('🔍 Starting API debug...');
+    
+    // Debug API configuration
+    debugApiConfig();
+    
+    // Check available HTTP clients
+    const clients = getAvailableHttpClients();
+    console.log('Available HTTP clients:', clients);
+    
+    // Test API endpoints
+    try {
+      const result = await testApiEndpoints();
+      console.log('API test result:', result);
+      
+      if (result.success) {
+        toast.info(`API test successful using ${result.method}`);
+      } else {
+        toast.error('API test failed');
+      }
+    } catch (error) {
+      console.error('API test error:', error);
+      toast.error('API test error: ' + error.message);
+    }
+    
+    // Test fetch API as well
+    try {
+      console.log('🧪 Testing fetch API...');
+      const fetchResult = await fetchApi.get('/api/test-db');
+      console.log('✅ Fetch API test successful:', fetchResult);
+      toast.info('Fetch API test successful');
+    } catch (fetchError) {
+      console.error('❌ Fetch API test failed:', fetchError);
+      toast.error('Fetch API test failed: ' + fetchError.message);
     }
   };
 
@@ -223,6 +278,24 @@ const Login = ({ onLogin }) => {
             ) : (
               'Sign In'
             )}
+          </button>
+
+          {/* Debug button for troubleshooting */}
+          <button 
+            type="button" 
+            onClick={handleDebug}
+            style={{ 
+              width: '100%', 
+              marginTop: '0.5rem',
+              padding: '0.5rem',
+              fontSize: '12px',
+              backgroundColor: '#f8f9fa',
+              border: '1px solid #dee2e6',
+              color: '#6c757d',
+              cursor: 'pointer'
+            }}
+          >
+            🐛 Debug API (Check Console)
           </button>
         </form>
 

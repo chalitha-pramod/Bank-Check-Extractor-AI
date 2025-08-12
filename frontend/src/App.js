@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { createAxiosInstance, API_ENDPOINTS } from './utils/apiConfig';
+import { createAxiosInstance, createDirectAxiosCall, API_ENDPOINTS } from './utils/apiConfig';
 import { initializeMobileOptimizations } from './utils/mobileUtils';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
@@ -36,8 +36,15 @@ function App() {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const api = createAxiosInstance();
-        const response = await api.get(API_ENDPOINTS.PROFILE);
+        let response;
+        try {
+          const api = createAxiosInstance();
+          response = await api.get(API_ENDPOINTS.PROFILE);
+        } catch (axiosError) {
+          console.warn('Main axios instance failed, trying direct call:', axiosError);
+          // Fallback to direct axios call
+          response = await createDirectAxiosCall(API_ENDPOINTS.PROFILE, 'GET');
+        }
         setUser(response.data.user);
       }
     } catch (error) {

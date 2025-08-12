@@ -32,48 +32,122 @@ export const API_ENDPOINTS = {
   INSERT_SAMPLE: '/api/checks/insert-sample'
 };
 
-// Axios instance configuration
+// Axios instance configuration with error handling
 export const createAxiosInstance = () => {
-  const config = getApiConfig();
-  
-  const instance = axios.create({
-    baseURL: config.baseURL,
-    timeout: config.timeout,
-    withCredentials: config.withCredentials,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
+  try {
+    const config = getApiConfig();
+    
+    // Ensure axios is available
+    if (!axios || typeof axios.create !== 'function') {
+      throw new Error('Axios is not properly imported');
     }
-  });
-  
-  // Request interceptor to add auth token
-  instance.interceptors.request.use(
-    (config) => {
+    
+    const instance = axios.create({
+      baseURL: config.baseURL,
+      timeout: config.timeout,
+      withCredentials: config.withCredentials,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    // Request interceptor to add auth token
+    instance.interceptors.request.use(
+      (config) => {
+        try {
+          const token = localStorage.getItem('token');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        } catch (error) {
+          console.warn('Failed to get token from localStorage:', error);
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+    
+    // Response interceptor to handle common errors
+    instance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          // Token expired or invalid
+          try {
+            localStorage.removeItem('token');
+            // Only redirect if we're not already on the login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          } catch (localStorageError) {
+            console.warn('Failed to clear localStorage:', localStorageError);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    
+    return instance;
+  } catch (error) {
+    console.error('Failed to create axios instance:', error);
+    
+    // Fallback: create a basic instance with error handling
+    const fallbackInstance = {
+      get: () => Promise.reject(new Error('Axios instance not available')),
+      post: () => Promise.reject(new Error('Axios instance not available')),
+      put: () => Promise.reject(new Error('Axios instance not available')),
+      delete: () => Promise.reject(new Error('Axios instance not available')),
+      interceptors: {
+        request: { use: () => {} },
+        response: { use: () => {} }
+      }
+    };
+    
+    return fallbackInstance;
+  }
+};
+
+// Alternative method using direct axios calls
+export const createDirectAxiosCall = (endpoint, method = 'GET', data = null, options = {}) => {
+  try {
+    const config = getApiConfig();
+    const url = `${config.baseURL}${endpoint}`;
+    
+    const requestConfig = {
+      method: method.toLowerCase(),
+      url,
+      timeout: config.timeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers
+      },
+      ...options
+    };
+    
+    // Add auth token if available
+    try {
       const token = localStorage.getItem('token');
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        requestConfig.headers.Authorization = `Bearer ${token}`;
       }
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
+    } catch (error) {
+      console.warn('Failed to get token from localStorage:', error);
     }
-  );
-  
-  // Response interceptor to handle common errors
-  instance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        // Token expired or invalid
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-      return Promise.reject(error);
+    
+    // Add data for POST/PUT requests
+    if (data && (method === 'POST' || method === 'PUT')) {
+      requestConfig.data = data;
     }
-  );
-  
-  return instance;
+    
+    return axios(requestConfig);
+  } catch (error) {
+    console.error('Failed to create direct axios call:', error);
+    return Promise.reject(error);
+  }
 };
 
 export default getApiConfig;
